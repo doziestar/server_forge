@@ -23,7 +23,7 @@ pub fn setup_backup_system(
     Ok(())
 }
 
-fn install_backup_tools() -> Result<(), Box<dyn Error>> {
+pub fn install_backup_tools() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
     match package_manager {
         PackageManager::Apt => run_command("apt", &["install", "-y", "restic"])?,
@@ -33,7 +33,7 @@ fn install_backup_tools() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn configure_backup_schedule(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn configure_backup_schedule(config: &Config) -> Result<(), Box<dyn Error>> {
     let cron_job = match config.backup_frequency.as_str() {
         "hourly" => {
             "0 * * * * root /usr/bin/restic backup /path/to/backup >> /var/log/restic.log 2>&1\n"
@@ -51,7 +51,7 @@ fn configure_backup_schedule(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_backup_locations(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn setup_backup_locations(config: &Config) -> Result<(), Box<dyn Error>> {
     // Define backup locations based on server role
     let backup_dirs = match config.server_role.as_str() {
         "web" => vec!["/var/www", "/etc/nginx", "/etc/apache2"],

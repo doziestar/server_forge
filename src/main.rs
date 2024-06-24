@@ -14,6 +14,7 @@ mod updates;
 mod utils;
 
 mod distro;
+mod tests;
 
 use rollback::RollbackManager;
 use utils::{generate_report, get_user_input, save_config, setup_logging};

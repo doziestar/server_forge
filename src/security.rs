@@ -24,7 +24,7 @@ pub fn implement_security_measures(
     Ok(())
 }
 
-fn configure_fail2ban() -> Result<(), Box<dyn Error>> {
+pub fn configure_fail2ban() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
     match package_manager {
         PackageManager::Apt => run_command("apt", &["install", "-y", "fail2ban"])?,
@@ -49,7 +49,7 @@ bantime = 3600
     Ok(())
 }
 
-fn setup_advanced_security(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn setup_advanced_security(config: &Config) -> Result<(), Box<dyn Error>> {
     if config.security_level == "advanced" {
         // Enable and configure SELinux or AppArmor based on the distribution
         match config.linux_distro.as_str() {
@@ -73,7 +73,7 @@ fn setup_advanced_security(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_rootkit_detection(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn setup_rootkit_detection(config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
     match package_manager {
         PackageManager::Apt => run_command("apt", &["install", "-y", "rkhunter", "chkrootkit"])?,
@@ -88,7 +88,7 @@ fn setup_rootkit_detection(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_security_scans() -> Result<(), Box<dyn Error>> {
+pub fn setup_security_scans() -> Result<(), Box<dyn Error>> {
     let scan_script = r#"#!/bin/bash
 rkhunter --check --skip-keypress
 chkrootkit

@@ -25,7 +25,7 @@ pub fn setup_monitoring(config: &Config, rollback: &RollbackManager) -> Result<(
     Ok(())
 }
 
-fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     // Install Prometheus
@@ -87,7 +87,7 @@ fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn configure_prometheus() -> Result<(), Box<dyn Error>> {
+pub fn configure_prometheus() -> Result<(), Box<dyn Error>> {
     let prometheus_config = r#"
 global:
   scrape_interval: 15s
@@ -105,7 +105,7 @@ scrape_configs:
     Ok(())
 }
 
-fn setup_grafana() -> Result<(), Box<dyn Error>> {
+pub fn setup_grafana() -> Result<(), Box<dyn Error>> {
     run_command("systemctl", &["start", "grafana-server"])?;
     run_command("systemctl", &["enable", "grafana-server"])?;
 
@@ -115,7 +115,7 @@ fn setup_grafana() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_node_exporter() -> Result<(), Box<dyn Error>> {
+pub fn setup_node_exporter() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {

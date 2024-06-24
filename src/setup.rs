@@ -21,7 +21,7 @@ pub fn initial_setup(config: &Config, rollback: &RollbackManager) -> Result<(), 
     Ok(())
 }
 
-fn update_system(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn update_system(config: &Config) -> Result<(), Box<dyn Error>> {
     match config.linux_distro.as_str() {
         "ubuntu" => {
             run_command("apt", &["update"])?;
@@ -38,7 +38,7 @@ fn update_system(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn install_essential_packages(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn install_essential_packages(config: &Config) -> Result<(), Box<dyn Error>> {
     let essential_packages = [
         "curl",
         "wget",
@@ -72,7 +72,7 @@ fn install_essential_packages(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_firewall(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn setup_firewall(config: &Config) -> Result<(), Box<dyn Error>> {
     match config.linux_distro.as_str() {
         "ubuntu" => {
             run_command("ufw", &["default", "deny", "incoming"])?;
@@ -103,7 +103,7 @@ fn setup_firewall(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_ssh() -> Result<(), Box<dyn Error>> {
+pub fn setup_ssh() -> Result<(), Box<dyn Error>> {
     let ssh_config = "/etc/ssh/sshd_config";
     let mut ssh_content = fs::read_to_string(ssh_config)?;
     ssh_content = ssh_content

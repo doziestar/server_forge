@@ -23,7 +23,7 @@ pub fn deploy_applications(
     Ok(())
 }
 
-fn deploy_app(app: &str, server_role: &str) -> Result<(), Box<dyn Error>> {
+pub fn deploy_app(app: &str, server_role: &str) -> Result<(), Box<dyn Error>> {
     match app {
         "nginx" => deploy_nginx()?,
         "apache" => deploy_apache()?,
@@ -37,7 +37,7 @@ fn deploy_app(app: &str, server_role: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_nginx() -> Result<(), Box<dyn Error>> {
+pub fn deploy_nginx() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -52,7 +52,7 @@ fn deploy_nginx() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_apache() -> Result<(), Box<dyn Error>> {
+pub fn deploy_apache() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -71,7 +71,7 @@ fn deploy_apache() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_mysql() -> Result<(), Box<dyn Error>> {
+pub fn deploy_mysql() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -89,7 +89,7 @@ fn deploy_mysql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_postgresql() -> Result<(), Box<dyn Error>> {
+pub fn deploy_postgresql() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -118,7 +118,7 @@ fn deploy_postgresql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_php(server_role: &str) -> Result<(), Box<dyn Error>> {
+pub fn deploy_php(server_role: &str) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -150,7 +150,7 @@ fn deploy_php(server_role: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_nodejs() -> Result<(), Box<dyn Error>> {
+pub fn deploy_nodejs() -> Result<(), Box<dyn Error>> {
     // Install Node.js using NVM (Node Version Manager)
     run_command(
         "curl",
@@ -171,7 +171,7 @@ fn deploy_nodejs() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_python() -> Result<(), Box<dyn Error>> {
+pub fn deploy_python() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
