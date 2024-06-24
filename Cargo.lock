@@ -796,7 +796,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "server_forge"
+name = "serverforge"
 version = "0.1.0"
 dependencies = [
  "chrono",
