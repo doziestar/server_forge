@@ -50,7 +50,7 @@ pub fn deploy_containers(
     Ok(())
 }
 
-fn install_docker() -> Result<(), Box<dyn Error>> {
+pub fn install_docker() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     match package_manager {
@@ -142,7 +142,7 @@ fn install_docker() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn configure_docker() -> Result<(), Box<dyn Error>> {
+pub fn configure_docker() -> Result<(), Box<dyn Error>> {
     // Create docker group if it doesn't exist
     run_command("groupadd", &["docker"])?;
 
@@ -174,7 +174,7 @@ fn configure_docker() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn install_kubernetes() -> Result<(), Box<dyn Error>> {
+pub fn install_kubernetes() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     // Install kubectl
@@ -204,7 +204,7 @@ fn install_kubernetes() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn configure_kubernetes() -> Result<(), Box<dyn Error>> {
+pub fn configure_kubernetes() -> Result<(), Box<dyn Error>> {
     // Start minikube
     run_command("minikube", &["start"])?;
 
@@ -221,7 +221,7 @@ fn configure_kubernetes() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn deploy_container(app: &str, use_kubernetes: bool) -> Result<(), Box<dyn Error>> {
+pub fn deploy_container(app: &str, use_kubernetes: bool) -> Result<(), Box<dyn Error>> {
     if use_kubernetes {
         deploy_to_kubernetes(app)?;
     } else {
@@ -230,7 +230,7 @@ fn deploy_container(app: &str, use_kubernetes: bool) -> Result<(), Box<dyn Error
     Ok(())
 }
 
-fn deploy_to_kubernetes(app: &str) -> Result<(), Box<dyn Error>> {
+pub fn deploy_to_kubernetes(app: &str) -> Result<(), Box<dyn Error>> {
     // Create a basic deployment YAML
     let deployment_yaml = format!(
         r#"
@@ -281,7 +281,7 @@ spec:
     Ok(())
 }
 
-fn deploy_to_docker(app: &str) -> Result<(), Box<dyn Error>> {
+pub fn deploy_to_docker(app: &str) -> Result<(), Box<dyn Error>> {
     // Pull the latest image
     run_command("docker", &["pull", app])?;
 

@@ -1,10 +1,15 @@
-use mockall::mock;
+use mockall::automock;
 use std::error::Error;
 
-mock! {
-    pub CommandRunner {}
-    impl CommandRunner {
-        pub fn run(&self, command: &str, args: &[&str]) -> Result<(), Box<dyn Error>>;
+pub trait CommandRunner {
+    fn run(&self, command: &str, args: &[&str]) -> Result<(), Box<dyn Error>>;
+}
+
+pub struct MockCommandRunner;
+#[automock]
+impl CommandRunner for MockCommandRunner {
+    fn run(&self, command: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
+        Ok(())
     }
 }
 

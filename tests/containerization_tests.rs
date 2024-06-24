@@ -1,7 +1,9 @@
-use common::{CommandRunner, MockConfig, MockRollbackManager};
-use server_forge::containerization::{deploy_containers, setup_docker, setup_kubernetes};
 use crate::common;
-
+use crate::common::{MockConfig, MockRollbackManager};
+use server_forge::containerization::{
+    configure_docker, configure_kubernetes, deploy_container, deploy_containers, deploy_to_docker,
+    deploy_to_kubernetes, install_docker, install_kubernetes, setup_docker, setup_kubernetes,
+};
 
 #[test]
 fn test_setup_docker() {
@@ -10,7 +12,7 @@ fn test_setup_docker() {
 
     mock.expect_run().times(7).returning(|_, _| Ok(()));
 
-    assert!(setup_docker(&rollback, &mock).is_ok());
+    assert!(setup_docker(&rollback).is_ok());
 }
 
 #[test]
@@ -20,7 +22,7 @@ fn test_setup_kubernetes() {
 
     mock.expect_run().times(6).returning(|_, _| Ok(()));
 
-    assert!(setup_kubernetes(&rollback, &mock).is_ok());
+    assert!(setup_kubernetes(&rollback).is_ok());
 }
 
 #[test]
@@ -35,7 +37,7 @@ fn test_deploy_containers() {
 
     mock.expect_run().times(6).returning(|_, _| Ok(()));
 
-    assert!(deploy_containers(&config, &rollback, &mock).is_ok());
+    assert!(deploy_containers(&config, &rollback).is_ok());
 }
 
 #[test]
@@ -44,7 +46,7 @@ fn test_install_docker() {
 
     mock.expect_run().times(7).returning(|_, _| Ok(()));
 
-    assert!(install_docker(&PackageManager::Apt, &mock).is_ok());
+    assert!(install_docker().is_ok());
 }
 
 #[test]
@@ -53,7 +55,7 @@ fn test_configure_docker() {
 
     mock.expect_run().times(4).returning(|_, _| Ok(()));
 
-    assert!(configure_docker(&mock).is_ok());
+    assert!(configure_docker().is_ok());
 }
 
 #[test]
@@ -62,7 +64,7 @@ fn test_install_kubernetes() {
 
     mock.expect_run().times(5).returning(|_, _| Ok(()));
 
-    assert!(install_kubernetes(&PackageManager::Apt, &mock).is_ok());
+    assert!(install_kubernetes().is_ok());
 }
 
 #[test]
@@ -71,7 +73,7 @@ fn test_configure_kubernetes() {
 
     mock.expect_run().times(3).returning(|_, _| Ok(()));
 
-    assert!(configure_kubernetes(&mock).is_ok());
+    assert!(configure_kubernetes().is_ok());
 }
 
 #[test]
@@ -80,11 +82,11 @@ fn test_deploy_container() {
 
     mock.expect_run().times(3).returning(|_, _| Ok(()));
 
-    assert!(deploy_container("test-app", true, &mock).is_ok());
+    assert!(deploy_container("test-app", true).is_ok());
 
     mock.expect_run().times(4).returning(|_, _| Ok(()));
 
-    assert!(deploy_container("test-app", false, &mock).is_ok());
+    assert!(deploy_container("test-app", false).is_ok());
 }
 
 #[test]
@@ -93,7 +95,7 @@ fn test_deploy_to_kubernetes() {
 
     mock.expect_run().times(3).returning(|_, _| Ok(()));
 
-    assert!(deploy_to_kubernetes("test-app", &mock).is_ok());
+    assert!(deploy_to_kubernetes("test-app").is_ok());
 }
 
 #[test]
@@ -102,7 +104,7 @@ fn test_deploy_to_docker() {
 
     mock.expect_run().times(4).returning(|_, _| Ok(()));
 
-    assert!(deploy_to_docker("test-app", &mock).is_ok());
+    assert!(deploy_to_docker("test-app").is_ok());
 }
 
 #[test]
@@ -119,7 +121,7 @@ fn test_containerization_error_handling() {
     mock.expect_run()
         .returning(|_, _| Err("Command failed".into()));
 
-    assert!(setup_docker(&rollback, &mock).is_err());
-    assert!(setup_kubernetes(&rollback, &mock).is_err());
-    assert!(deploy_containers(&config, &rollback, &mock).is_err());
+    assert!(setup_docker(&rollback).is_err());
+    assert!(setup_kubernetes(&rollback).is_err());
+    assert!(deploy_containers(&config, &rollback).is_err());
 }

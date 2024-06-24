@@ -1,16 +1,11 @@
-use server_forge::config::Config;
-use server_forge::security::{implement_security_measures, configure_fail2ban, setup_advanced_security, setup_rootkit_detection, setup_security_scans};
-use server_forge::rollback::RollbackManager;
-use std::error::Error;
+use crate::common::MockCommandRunner;
 use mockall::predicate::*;
-use mockall::mock;
-
-mock! {
-    CommandRunner {}
-    impl CommandRunner {
-        fn run(&self, command: &str, args: &[&str]) -> Result<(), Box<dyn Error>>;
-    }
-}
+use server_forge::config::Config;
+use server_forge::rollback::RollbackManager;
+use server_forge::security::{
+    configure_fail2ban, implement_security_measures, setup_advanced_security,
+    setup_rootkit_detection, setup_security_scans,
+};
 
 #[test]
 fn test_implement_security_measures() {
@@ -20,7 +15,7 @@ fn test_implement_security_measures() {
     let config = Config::default();
     let rollback = RollbackManager::new();
 
-    assert!(implement_security_measures(&config, &rollback, &mock).is_ok());
+    assert!(implement_security_measures(&config, &rollback).is_ok());
 }
 
 #[test]
@@ -39,7 +34,7 @@ fn test_configure_fail2ban() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(configure_fail2ban(&mock).is_ok());
+    assert!(configure_fail2ban().is_ok());
 }
 
 #[test]
@@ -50,7 +45,10 @@ fn test_setup_advanced_security() {
     config.linux_distro = "ubuntu".to_string();
 
     mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "apparmor", "apparmor-utils"]))
+        .with(
+            eq("apt"),
+            eq(&["install", "-y", "apparmor", "apparmor-utils"]),
+        )
         .times(1)
         .returning(|_, _| Ok(()));
     mock.expect_run()
@@ -58,7 +56,7 @@ fn test_setup_advanced_security() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(setup_advanced_security(&config, &mock).is_ok());
+    assert!(setup_advanced_security(&config).is_ok());
 }
 
 #[test]
@@ -79,7 +77,7 @@ fn test_setup_rootkit_detection() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(setup_rootkit_detection(&config, &mock).is_ok());
+    assert!(setup_rootkit_detection(&config).is_ok());
 }
 
 #[test]
@@ -91,5 +89,5 @@ fn test_setup_security_scans() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(setup_security_scans(&mock).is_ok());
+    assert!(setup_security_scans().is_ok());
 }

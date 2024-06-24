@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::distro::{get_package_manager};
+use crate::distro::get_package_manager;
 use crate::rollback::RollbackManager;
 use crate::utils::run_command;
 use log::info;

@@ -1,10 +1,9 @@
-use crate::common::{CommandRunner, MockConfig, MockRollbackManager};
+use crate::common;
+use crate::common::{MockConfig, MockRollbackManager};
 use server_forge::monitoring::{
-    configure_prometheus, install_monitoring_tools, setup_grafana, setup_monitoring,
-    setup_node_exporter,
+    configure_prometheus, install_monitoring_tools, install_node_exporter_from_source,
+    install_prometheus_from_source, setup_grafana, setup_monitoring, setup_node_exporter,
 };
-
-mod common;
 
 #[test]
 fn test_setup_monitoring() {
@@ -18,14 +17,14 @@ fn test_setup_monitoring() {
 
     mock.expect_run().times(15).returning(|_, _| Ok(()));
 
-    assert!(setup_monitoring(&config, &rollback, &mock).is_ok());
+    assert!(setup_monitoring(&config, &rollback).is_ok());
 
     // Test when monitoring is disabled
     let config_disabled = MockConfig {
         monitoring: false,
         ..Default::default()
     };
-    assert!(setup_monitoring(&config_disabled, &rollback, &mock).is_ok());
+    assert!(setup_monitoring(&config_disabled, &rollback).is_ok());
 }
 
 #[test]
@@ -38,7 +37,7 @@ fn test_install_monitoring_tools() {
 
     mock.expect_run().times(6).returning(|_, _| Ok(()));
 
-    assert!(install_monitoring_tools(&config, &mock).is_ok());
+    assert!(install_monitoring_tools(&config).is_ok());
 }
 
 #[test]
@@ -47,8 +46,8 @@ fn test_configure_prometheus() {
 
     mock.expect_run().times(2).returning(|_, _| Ok(()));
 
-    assert!(configure_prometheus(&mock).is_ok());
-    assert!(configure_prometheus(&mock).is_ok());
+    assert!(configure_prometheus().is_ok());
+    assert!(configure_prometheus().is_ok());
 }
 
 #[test]
@@ -57,7 +56,7 @@ fn test_setup_grafana() {
 
     mock.expect_run().times(2).returning(|_, _| Ok(()));
 
-    assert!(setup_grafana(&mock).is_ok());
+    assert!(setup_grafana().is_ok());
 }
 
 #[test]
@@ -70,7 +69,7 @@ fn test_setup_node_exporter() {
 
     mock.expect_run().times(3).returning(|_, _| Ok(()));
 
-    assert!(setup_node_exporter(&config, &mock).is_ok());
+    assert!(setup_node_exporter().is_ok());
 }
 
 #[test]
@@ -79,7 +78,7 @@ fn test_install_prometheus_from_source() {
 
     mock.expect_run().times(12).returning(|_, _| Ok(()));
 
-    assert!(install_prometheus_from_source(&mock).is_ok());
+    assert!(install_prometheus_from_source().is_ok());
 }
 
 #[test]
@@ -88,7 +87,7 @@ fn test_install_node_exporter_from_source() {
 
     mock.expect_run().times(6).returning(|_, _| Ok(()));
 
-    assert!(install_node_exporter_from_source(&mock).is_ok());
+    assert!(install_node_exporter_from_source().is_ok());
 }
 
 #[test]
@@ -104,5 +103,5 @@ fn test_monitoring_error_handling() {
     mock.expect_run()
         .returning(|_, _| Err("Command failed".into()));
 
-    assert!(setup_monitoring(&config, &rollback, &mock).is_err());
+    assert!(setup_monitoring(&config, &rollback).is_err());
 }

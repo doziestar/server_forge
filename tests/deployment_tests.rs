@@ -1,11 +1,11 @@
-use crate::common::{CommandRunner, MockConfig, MockRollbackManager};
+use crate::common;
+use crate::common::{MockConfig, MockRollbackManager};
+use mockall::predicate::eq;
 use server_forge::deployment::{
     deploy_apache, deploy_app, deploy_applications, deploy_mysql, deploy_nginx, deploy_nodejs,
-    deploy_php, deploy_postgresql, deploy_python,
+    deploy_php, deploy_postgresql, deploy_python, setup_database, setup_web_server_config,
 };
 use server_forge::distro::PackageManager;
-
-mod common;
 
 #[test]
 fn test_deploy_applications() {
@@ -19,7 +19,7 @@ fn test_deploy_applications() {
 
     mock.expect_run().times(4).returning(|_, _| Ok(()));
 
-    assert!(deploy_applications(&config, &rollback, &mock).is_ok());
+    assert!(deploy_applications(&config, &rollback).is_ok());
 }
 
 #[test]
@@ -29,10 +29,10 @@ fn test_deploy_app() {
 
     // Test nginx deployment
     mock.expect_run().times(3).returning(|_, _| Ok(()));
-    assert!(deploy_app("nginx", server_role, &mock).is_ok());
+    assert!(deploy_app("nginx", server_role).is_ok());
 
     // Test unsupported app
-    assert!(deploy_app("unsupported-app", server_role, &mock).is_err());
+    assert!(deploy_app("unsupported-app", server_role).is_err());
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn test_deploy_nginx() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_nginx(&PackageManager::Apt, &mock).is_ok());
+    assert!(deploy_nginx().is_ok());
 }
 
 #[test]
@@ -72,7 +72,7 @@ fn test_deploy_apache() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_apache(&PackageManager::Apt, &mock).is_ok());
+    assert!(deploy_apache().is_ok());
 }
 
 #[test]
@@ -96,7 +96,7 @@ fn test_deploy_mysql() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_mysql(&PackageManager::Apt, &mock).is_ok());
+    assert!(deploy_mysql().is_ok());
 }
 
 #[test]
@@ -119,7 +119,7 @@ fn test_deploy_postgresql() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_postgresql(&PackageManager::Apt, &mock).is_ok());
+    assert!(deploy_postgresql().is_ok());
 }
 
 #[test]
@@ -147,18 +147,16 @@ fn test_deploy_php() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_php(&PackageManager::Apt, server_role, &mock).is_ok());
+    assert!(deploy_php(&PackageManager::Apt).is_ok());
 }
 
 #[test]
 fn test_deploy_nodejs() {
     let mut mock = common::MockCommandRunner::new();
 
-    mock.expect_run()
-        .times(5)
-        .returning(|_, _| Ok(()));
+    mock.expect_run().times(5).returning(|_, _| Ok(()));
 
-    assert!(deploy_nodejs(&mock).is_ok());
+    assert!(deploy_nodejs().is_ok());
 }
 
 #[test]
@@ -177,20 +175,18 @@ fn test_deploy_python() {
         .times(1)
         .returning(|_, _| Ok(()));
 
-    assert!(deploy_python(&PackageManager::Apt, &mock).is_ok());
+    assert!(deploy_python().is_ok());
 }
 
 #[test]
 fn test_setup_web_server_config() {
     let mut mock = common::MockCommandRunner::new();
 
-    mock.expect_run()
-        .times(1)
-        .returning(|_, _| Ok(()));
+    mock.expect_run().times(1).returning(|_, _| Ok(()));
 
-    assert!(setup_web_server_config("nginx", &mock).is_ok());
-    assert!(setup_web_server_config("apache", &mock).is_ok());
-    assert!(setup_web_server_config("unsupported", &mock).is_err());
+    assert!(setup_web_server_config("nginx").is_ok());
+    assert!(setup_web_server_config("apache").is_ok());
+    assert!(setup_web_server_config("unsupported").is_err());
 }
 
 #[test]
@@ -199,7 +195,7 @@ fn test_setup_database() {
 
     mock.expect_run().times(3).returning(|_, _| Ok(()));
 
-    assert!(setup_database("mysql", &mock).is_ok());
-    assert!(setup_database("postgresql", &mock).is_ok());
-    assert!(setup_database("unsupported", &mock).is_err());
+    assert!(setup_database("mysql").is_ok());
+    assert!(setup_database("postgresql").is_ok());
+    assert!(setup_database("unsupported").is_err());
 }

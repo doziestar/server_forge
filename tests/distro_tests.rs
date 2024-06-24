@@ -1,4 +1,5 @@
 use crate::common::CommandRunner;
+use mockall::predicate::eq;
 use server_forge::distro::{
     get_package_manager, install_package, uninstall_package, update_system, PackageManager,
 };
@@ -45,21 +46,21 @@ fn test_update_system() {
         .with(eq("apt"), eq(&["upgrade", "-y"]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(update_system(&PackageManager::Apt, &mock).is_ok());
+    assert!(update_system(&PackageManager::Apt).is_ok());
 
     // Test Yum
     mock.expect_run()
         .with(eq("yum"), eq(&["update", "-y"]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(update_system(&PackageManager::Yum, &mock).is_ok());
+    assert!(update_system(&PackageManager::Yum).is_ok());
 
     // Test Dnf
     mock.expect_run()
         .with(eq("dnf"), eq(&["upgrade", "-y"]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(update_system(&PackageManager::Dnf, &mock).is_ok());
+    assert!(update_system(&PackageManager::Dnf).is_ok());
 }
 
 #[test]
@@ -72,21 +73,21 @@ fn test_install_package() {
         .with(eq("apt"), eq(&["install", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(install_package(&PackageManager::Apt, package, &mock).is_ok());
+    assert!(install_package(&PackageManager::Apt, package).is_ok());
 
     // Test Yum
     mock.expect_run()
         .with(eq("yum"), eq(&["install", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(install_package(&PackageManager::Yum, package, &mock).is_ok());
+    assert!(install_package(&PackageManager::Yum, package).is_ok());
 
     // Test Dnf
     mock.expect_run()
         .with(eq("dnf"), eq(&["install", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(install_package(&PackageManager::Dnf, package, &mock).is_ok());
+    assert!(install_package(&PackageManager::Dnf, package).is_ok());
 }
 
 #[test]
@@ -99,19 +100,19 @@ fn test_uninstall_package() {
         .with(eq("apt"), eq(&["remove", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(uninstall_package(&PackageManager::Apt, package, &mock).is_ok());
+    assert!(uninstall_package(&PackageManager::Apt, package).is_ok());
 
     // Test Yum
     mock.expect_run()
         .with(eq("yum"), eq(&["remove", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(uninstall_package(&PackageManager::Yum, package, &mock).is_ok());
+    assert!(uninstall_package(&PackageManager::Yum, package).is_ok());
 
     // Test Dnf
     mock.expect_run()
         .with(eq("dnf"), eq(&["remove", "-y", package]))
         .times(1)
         .returning(|_, _| Ok(()));
-    assert!(uninstall_package(&PackageManager::Dnf, package, &mock).is_ok());
+    assert!(uninstall_package(&PackageManager::Dnf, package).is_ok());
 }

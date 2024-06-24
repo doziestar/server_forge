@@ -189,7 +189,7 @@ pub fn deploy_python() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_web_server_config(app: &str) -> Result<(), Box<dyn Error>> {
+pub fn setup_web_server_config(app: &str) -> Result<(), Box<dyn Error>> {
     match app {
         "nginx" => setup_nginx_config()?,
         "apache" => setup_apache_config()?,
@@ -235,7 +235,7 @@ fn setup_apache_config() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn setup_database(db: &str) -> Result<(), Box<dyn Error>> {
+pub fn setup_database(db: &str) -> Result<(), Box<dyn Error>> {
     match db {
         "mysql" => setup_mysql()?,
         "postgresql" => setup_postgresql()?,

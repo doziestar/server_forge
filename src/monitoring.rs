@@ -134,7 +134,7 @@ pub fn setup_node_exporter() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn install_prometheus_from_source() -> Result<(), Box<dyn Error>> {
+pub fn install_prometheus_from_source() -> Result<(), Box<dyn Error>> {
     run_command("wget", &["https://github.com/prometheus/prometheus/releases/download/v2.30.3/prometheus-2.30.3.linux-amd64.tar.gz"])?;
     run_command("tar", &["xvfz", "prometheus-2.30.3.linux-amd64.tar.gz"])?;
     run_command("mv", &["prometheus-2.30.3.linux-amd64", "prometheus"])?;
@@ -218,7 +218,7 @@ WantedBy=multi-user.target
     Ok(())
 }
 
-fn install_node_exporter_from_source() -> Result<(), Box<dyn Error>> {
+pub fn install_node_exporter_from_source() -> Result<(), Box<dyn Error>> {
     run_command("wget", &["https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-amd64.tar.gz"])?;
     run_command("tar", &["xvfz", "node_exporter-1.2.2.linux-amd64.tar.gz"])?;
 

@@ -39,7 +39,10 @@ fn test_config_serialization() {
     assert_eq!(config.monitoring, deserialized.monitoring);
     assert_eq!(config.backup_frequency, deserialized.backup_frequency);
     assert_eq!(config.deployed_apps, deserialized.deployed_apps);
-    assert_eq!(config.custom_firewall_rules, deserialized.custom_firewall_rules);
+    assert_eq!(
+        config.custom_firewall_rules,
+        deserialized.custom_firewall_rules
+    );
     assert_eq!(config.update_schedule, deserialized.update_schedule);
     assert_eq!(config.use_containers, deserialized.use_containers);
     assert_eq!(config.use_kubernetes, deserialized.use_kubernetes);
