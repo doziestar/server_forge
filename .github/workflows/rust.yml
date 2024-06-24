@@ -157,7 +157,7 @@ jobs:
           echo "Package: serverforge
           Version: ${{ github.ref_name }}
           Architecture: amd64
-          Maintainer: Your Name <your.email@example.com>
+          Maintainer: Chidozie C. Okafor <chidosiky2015@gmail.com>
           Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ github.ref_name }}_amd64/DEBIAN/control
           mkdir -p serverforge_${{ github.ref_name }}_amd64/usr/local/bin
           cp target/x86_64-unknown-linux-gnu/release/serverforge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
