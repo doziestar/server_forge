@@ -18,75 +18,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check
 
   test:
     name: Test Suite
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --test main -- --nocapture
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --all-features -- --nocapture
 
   fmt:
     name: Rustfmt
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+          components: rustfmt
+      - run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -- -D warnings
 
   docs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: Install mdBook
         run: cargo install mdbook
-      - name: Setup mdBook if not exists
+      - name: Setup mdBook
         run: |
           if [ ! -d "docs" ]; then
             mkdir docs
@@ -98,10 +73,7 @@ jobs:
             echo "- [Chapter 1](./chapter_1.md)" >> src/SUMMARY.md
           fi
       - name: Build API docs
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --no-deps --all-features
+        run: cargo doc --no-deps --all-features
       - name: Build mdBook docs
         run: mdbook build docs
       - name: Combine docs
@@ -123,80 +95,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --dry-run
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish --dry-run
 
   release:
     name: Release
-    needs: [ check, fmt, docs ]
+    needs: [check, fmt, docs, publish-dry-run]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: x86_64-unknown-linux-gnu
+          targets: x86_64-unknown-linux-gnu
+      - uses: Swatinem/rust-cache@v2
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target x86_64-unknown-linux-gnu
+        run: cargo build --release --target x86_64-unknown-linux-gnu
       - name: Package
         run: |
           cd target/x86_64-unknown-linux-gnu/release
-          echo "Contents of release directory:"
-          ls -la
-          
           BINARY_NAME="server_forge"
-          if [ ! -f "$BINARY_NAME" ]; then
-            echo "Error: Expected binary $BINARY_NAME not found"
-            exit 1
-          fi
-          
-          echo "Found binary: $BINARY_NAME"
-          
           ARCHIVE_NAME="server_forge-x86_64-unknown-linux-gnu.tar.gz"
           tar czvf "../../../$ARCHIVE_NAME" "$BINARY_NAME"
-          
-          echo "Contents of current directory after creating archive:"
-          ls -la
-          
-          cd ../../../
-          echo "Contents of root directory:"
-          ls -la
-          
-          echo "Archive details:"
-          ls -l $ARCHIVE_NAME
-          
-          echo "Full path of archive:"
-          readlink -f $ARCHIVE_NAME
-          
-          echo "Searching for archive:"
-          find . -name "$ARCHIVE_NAME"
       - name: Upload binary to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
-          repo_token: ${{ secrets.TOKEN }}
-          file: server_forge-x86_64-unknown-linux-gnu.tar.gz
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./server_forge-x86_64-unknown-linux-gnu.tar.gz
           asset_name: server_forge-x86_64-unknown-linux-gnu.tar.gz
-          tag: ${{ github.ref }}
-          overwrite: true
-      - name: Debug - List all files
-        if: failure()
-        run: |
-          echo "Contents of current directory:"
-          ls -R
-          echo "Searching for archive in entire workspace:"
-          find $GITHUB_WORKSPACE -name "server_forge-x86_64-unknown-linux-gnu.tar.gz"
+          asset_content_type: application/gzip
 
   publish-crates-io:
     name: Publish to crates.io
@@ -205,15 +135,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
 
   linux-packages:
     name: Create Linux Packages
@@ -222,6 +148,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y rpm
       - name: Create DEB package
         run: |
           mkdir -p serverforge_${{ github.ref_name }}_amd64/DEBIAN
@@ -231,12 +159,12 @@ jobs:
           Maintainer: Chidozie C. Okafor <chidosiky2015@gmail.com>
           Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ github.ref_name }}_amd64/DEBIAN/control
           mkdir -p serverforge_${{ github.ref_name }}_amd64/usr/local/bin
-          cp target/x86_64-unknown-linux-gnu/release/serverforge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
+          cp target/x86_64-unknown-linux-gnu/release/server_forge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
           dpkg-deb --build serverforge_${{ github.ref_name }}_amd64
       - name: Create RPM package
         run: |
-          mkdir -p ~/rpmbuild/{SPECS,SOURCES}
-          cp target/x86_64-unknown-linux-gnu/release/serverforge ~/rpmbuild/SOURCES/
+          mkdir -p ~/rpmbuild/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
+          cp target/x86_64-unknown-linux-gnu/release/server_forge ~/rpmbuild/SOURCES/
           echo "Name: serverforge
           Version: ${{ github.ref_name }}
           Release: 1
@@ -246,12 +174,12 @@ jobs:
           %description
           ServerForge is a robust server setup and maintenance tool.
           
-          %files
-          /usr/local/bin/serverforge
-          
           %install
           mkdir -p %{buildroot}/usr/local/bin
-          cp %{_sourcedir}/serverforge %{buildroot}/usr/local/bin/
+          cp %{_sourcedir}/server_forge %{buildroot}/usr/local/bin/
+          
+          %files
+          /usr/local/bin/server_forge
           
           %clean
           rm -rf %{buildroot}" > ~/rpmbuild/SPECS/serverforge.spec
