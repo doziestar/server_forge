@@ -2,6 +2,9 @@
 name = "serverforge"
 version = "0.1.0"
 edition = "2021"
+authors = ["Chidozie C. Okafor <chidosiky2015@gmail.com>"]
+description = "ServerForge - A robust server setup and maintenance tool"
+license = "MIT"
 
 [dependencies]
 log = "0.4.21"

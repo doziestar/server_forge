@@ -127,6 +127,11 @@ jobs:
           asset_path: ./server_forge-x86_64-unknown-linux-gnu.tar.gz
           asset_name: server_forge-x86_64-unknown-linux-gnu.tar.gz
           asset_content_type: application/gzip
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: server_forge-x86_64-unknown-linux-gnu
+          path: server_forge-x86_64-unknown-linux-gnu.tar.gz
 
   publish-crates-io:
     name: Publish to crates.io
@@ -143,13 +148,20 @@ jobs:
 
   linux-packages:
     name: Create Linux Packages
-    needs: [release]
+    needs: [ release ]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y rpm
+      - name: Download release artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: server_forge-x86_64-unknown-linux-gnu
+          path: ./
+      - name: Extract release artifact
+        run: tar -xzvf server_forge-x86_64-unknown-linux-gnu.tar.gz
       - name: Create DEB package
         run: |
           mkdir -p serverforge_${{ github.ref_name }}_amd64/DEBIAN
@@ -159,12 +171,12 @@ jobs:
           Maintainer: Chidozie C. Okafor <chidosiky2015@gmail.com>
           Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ github.ref_name }}_amd64/DEBIAN/control
           mkdir -p serverforge_${{ github.ref_name }}_amd64/usr/local/bin
-          cp target/x86_64-unknown-linux-gnu/release/server_forge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
+          cp server_forge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
           dpkg-deb --build serverforge_${{ github.ref_name }}_amd64
       - name: Create RPM package
         run: |
           mkdir -p ~/rpmbuild/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
-          cp target/x86_64-unknown-linux-gnu/release/server_forge ~/rpmbuild/SOURCES/
+          cp server_forge ~/rpmbuild/SOURCES/
           echo "Name: serverforge
           Version: ${{ github.ref_name }}
           Release: 1
