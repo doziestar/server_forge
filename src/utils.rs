@@ -1,3 +1,9 @@
+//! # Utilities Module
+//!
+//! This module provides various utility functions used throughout the server setup
+//! and maintenance tool. It includes functions for logging, user input, configuration
+//! management, command execution, and report generation.
+
 use crate::config::Config;
 use chrono::Local;
 use log::{error, info};
@@ -6,6 +12,14 @@ use std::fs;
 use std::io::{self, Write};
 use std::process::Command;
 
+/// Sets up logging for the application.
+///
+/// This function configures log4rs to write logs to a file in the /var/log directory.
+/// The log file name includes a timestamp to ensure uniqueness.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if logging is set up successfully, or an error if setup fails.
 pub fn setup_logging() -> Result<(), Box<dyn Error>> {
     let log_file = format!(
         "/var/log/server_setup_{}.log",
@@ -29,6 +43,14 @@ pub fn setup_logging() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Prompts the user for input to configure the server setup.
+///
+/// This function interactively asks the user for various configuration options
+/// and returns a `Config` struct with the user's choices.
+///
+/// # Returns
+///
+/// Returns a `Result` containing the `Config` struct if successful, or an error if input fails.
 pub fn get_user_input() -> Result<Config, Box<dyn Error>> {
     let mut config = Config::default();
 
@@ -59,6 +81,17 @@ pub fn get_user_input() -> Result<Config, Box<dyn Error>> {
     Ok(config)
 }
 
+/// Prompts the user with a question and returns their response.
+///
+/// This function is a helper used by `get_user_input` to ask individual questions.
+///
+/// # Arguments
+///
+/// * `question` - A string slice containing the question to ask the user
+///
+/// # Returns
+///
+/// Returns a `Result` containing the user's response as a `String`, or an error if input fails.
 fn prompt(question: &str) -> Result<String, Box<dyn Error>> {
     print!("{}", question);
     io::stdout().flush()?;
@@ -67,6 +100,17 @@ fn prompt(question: &str) -> Result<String, Box<dyn Error>> {
     Ok(input.trim().to_string())
 }
 
+/// Saves the configuration to a JSON file.
+///
+/// This function serializes the `Config` struct to JSON and saves it to /etc/server_setup_config.json.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct to be saved
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the config is saved successfully, or an error if saving fails.
 pub fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
     let config_path = "/etc/server_setup_config.json";
     let config_json = serde_json::to_string_pretty(config)?;
@@ -75,6 +119,19 @@ pub fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Executes a system command and logs the result.
+///
+/// This function runs a command with the given arguments, logs the execution,
+/// and returns an error if the command fails.
+///
+/// # Arguments
+///
+/// * `command` - A string slice containing the command to run
+/// * `args` - A slice of string slices containing the arguments for the command
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the command executes successfully, or an error if execution fails.
 pub fn run_command(command: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
     info!("Running command: {} {:?}", command, args);
     let output = Command::new(command).args(args).output()?;
@@ -91,6 +148,18 @@ pub fn run_command(command: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Generates a report of the server setup.
+///
+/// This function creates a text file report containing details of the server configuration,
+/// deployed applications, firewall rules, and system information.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing the server configuration
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the report is generated successfully, or an error if generation fails.
 pub fn generate_report(config: &Config) -> Result<(), Box<dyn Error>> {
     let report_path = "/root/server_setup_report.txt";
     let mut report = String::new();

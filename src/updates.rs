@@ -1,3 +1,11 @@
+//! # Updates Module
+//!
+//! This module provides functionality for setting up and configuring automatic updates
+//! on Linux servers. It supports different update mechanisms for Ubuntu, CentOS, and Fedora,
+//! ensuring that the server stays up-to-date with the latest security patches and software versions.
+//!
+//! The module includes functions for configuring unattended-upgrades on Ubuntu,
+//! yum-cron on CentOS, and dnf-automatic on Fedora.
 use crate::config::Config;
 use crate::distro::get_package_manager;
 use crate::rollback::RollbackManager;
@@ -5,6 +13,20 @@ use crate::utils::run_command;
 use log::info;
 use std::error::Error;
 
+/// Sets up automatic updates based on the Linux distribution specified in the configuration.
+///
+/// This function determines the appropriate update mechanism based on the Linux distribution
+/// and calls the corresponding setup function. It creates a snapshot before starting the setup
+/// process for potential rollback.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing the Linux distribution information
+/// * `rollback` - A reference to the `RollbackManager` for creating snapshots
+///
+/// # Returns
+///
+/// Returns `Ok(())` if automatic updates are set up successfully, or an error if setup fails.
 pub fn setup_automatic_updates(
     config: &Config,
     rollback: &RollbackManager,
@@ -26,6 +48,18 @@ pub fn setup_automatic_updates(
     Ok(())
 }
 
+/// Sets up automatic updates for Ubuntu using unattended-upgrades.
+///
+/// This function installs unattended-upgrades, configures it to automatically install
+/// security updates, and sets up the update schedule based on the configuration.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing update schedule information
+///
+/// # Returns
+///
+/// Returns `Ok(())` if unattended-upgrades is set up successfully, or an error if setup fails.
 fn setup_ubuntu_updates(config: &Config) -> Result<(), Box<dyn Error>> {
     run_command(
         "apt",
@@ -71,6 +105,18 @@ Unattended-Upgrade::Automatic-Reboot "false";
     Ok(())
 }
 
+/// Sets up automatic updates for CentOS using yum-cron.
+///
+/// This function installs yum-cron, configures it to automatically apply updates,
+/// and enables the yum-cron service.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct (unused in the current implementation)
+///
+/// # Returns
+///
+/// Returns `Ok(())` if yum-cron is set up successfully, or an error if setup fails.
 fn setup_centos_updates(config: &Config) -> Result<(), Box<dyn Error>> {
     run_command("yum", &["install", "-y", "yum-cron"])?;
 
@@ -85,6 +131,18 @@ fn setup_centos_updates(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up automatic updates for Fedora using dnf-automatic.
+///
+/// This function installs dnf-automatic, configures it to automatically apply updates,
+/// and enables the dnf-automatic timer.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct (unused in the current implementation)
+///
+/// # Returns
+///
+/// Returns `Ok(())` if dnf-automatic is set up successfully, or an error if setup fails.
 fn setup_fedora_updates(config: &Config) -> Result<(), Box<dyn Error>> {
     run_command("dnf", &["install", "-y", "dnf-automatic"])?;
 

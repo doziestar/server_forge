@@ -1,3 +1,13 @@
+//! # Deployment Module
+//!
+//! This module provides functionality for deploying various applications and services
+//! on a Linux server. It supports deployment of web servers (Nginx, Apache), databases
+//! (MySQL, PostgreSQL), programming languages and runtimes (PHP, Node.js, Python),
+//! and configures them according to best practices.
+//!
+//! The module is designed to work across different Linux distributions by leveraging
+//! the appropriate package manager for each system.
+
 use crate::config::Config;
 use crate::distro::{get_package_manager, PackageManager};
 use crate::rollback::RollbackManager;
@@ -5,6 +15,19 @@ use crate::utils::run_command;
 use log::info;
 use std::error::Error;
 
+/// Deploys all applications specified in the configuration.
+///
+/// This function iterates through the list of applications specified in the configuration
+/// and deploys each one. It creates a snapshot before deployment for potential rollback.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing deployment information
+/// * `rollback` - A reference to the `RollbackManager` for creating snapshots
+///
+/// # Returns
+///
+/// Returns `Ok(())` if all applications are deployed successfully, or an error if any deployment fails.
 pub fn deploy_applications(
     config: &Config,
     rollback: &RollbackManager,
@@ -23,6 +46,16 @@ pub fn deploy_applications(
     Ok(())
 }
 
+/// Deploys a single application based on its type and the server role.
+///
+/// # Arguments
+///
+/// * `app` - A string slice representing the application to deploy
+/// * `server_role` - A string slice representing the role of the server (e.g., "web", "database")
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the application is deployed successfully, or an error if deployment fails.
 pub fn deploy_app(app: &str, server_role: &str) -> Result<(), Box<dyn Error>> {
     match app {
         "nginx" => deploy_nginx()?,
@@ -37,6 +70,14 @@ pub fn deploy_app(app: &str, server_role: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures the Nginx web server.
+///
+/// This function installs Nginx using the appropriate package manager,
+/// starts the Nginx service, and enables it to start on boot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Nginx is deployed successfully, or an error if deployment fails.
 pub fn deploy_nginx() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -52,6 +93,14 @@ pub fn deploy_nginx() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures the Apache web server.
+///
+/// This function installs Apache (httpd) using the appropriate package manager,
+/// starts the Apache service, and enables it to start on boot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Apache is deployed successfully, or an error if deployment fails.
 pub fn deploy_apache() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -71,6 +120,15 @@ pub fn deploy_apache() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures the MySQL database server.
+///
+/// This function installs MySQL using the appropriate package manager,
+/// starts the MySQL service, enables it to start on boot, and runs the
+/// mysql_secure_installation script to set up basic security measures.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if MySQL is deployed successfully, or an error if deployment fails.
 pub fn deploy_mysql() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -89,6 +147,15 @@ pub fn deploy_mysql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures the PostgreSQL database server.
+///
+/// This function installs PostgreSQL using the appropriate package manager,
+/// initializes the database if necessary (for CentOS/Fedora), starts the
+/// PostgreSQL service, and enables it to start on boot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if PostgreSQL is deployed successfully, or an error if deployment fails.
 pub fn deploy_postgresql() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -118,6 +185,18 @@ pub fn deploy_postgresql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures PHP.
+///
+/// This function installs PHP and related packages using the appropriate package manager.
+/// It also installs additional modules based on the server role (e.g., libapache2-mod-php for web servers).
+///
+/// # Arguments
+///
+/// * `server_role` - A string slice representing the role of the server (e.g., "web")
+///
+/// # Returns
+///
+/// Returns `Ok(())` if PHP is deployed successfully, or an error if deployment fails.
 pub fn deploy_php(server_role: &str) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -150,6 +229,14 @@ pub fn deploy_php(server_role: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures Node.js.
+///
+/// This function installs Node.js using NVM (Node Version Manager), installs the latest LTS version,
+/// and sets it as the default. It also installs the PM2 process manager for running Node.js applications.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Node.js is deployed successfully, or an error if deployment fails.
 pub fn deploy_nodejs() -> Result<(), Box<dyn Error>> {
     // Install Node.js using NVM (Node Version Manager)
     run_command(
@@ -171,6 +258,14 @@ pub fn deploy_nodejs() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys and configures Python.
+///
+/// This function installs Python 3 and pip using the appropriate package manager.
+/// It also installs virtualenv for creating isolated Python environments.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Python is deployed successfully, or an error if deployment fails.
 pub fn deploy_python() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -292,6 +387,14 @@ fn setup_postgresql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Generates a secure random password.
+///
+/// This function creates a random password of 20 characters, including uppercase and lowercase
+/// letters, numbers, and special characters.
+///
+/// # Returns
+///
+/// Returns a `String` containing the generated password.
 fn generate_secure_password() -> String {
     use rand::Rng;
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
@@ -310,6 +413,18 @@ fn generate_secure_password() -> String {
     password
 }
 
+/// Creates a sample web application based on the specified application type.
+///
+/// This function creates a basic "Hello, World!" application for PHP, Node.js, or Python,
+/// demonstrating how to set up a simple web server for each technology.
+///
+/// # Arguments
+///
+/// * `app_type` - A string slice representing the type of application to create ("php", "nodejs", or "python")
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the sample application is created successfully, or an error if creation fails.
 // Helper function to create a simple web application
 fn create_sample_web_app(app_type: &str) -> Result<(), Box<dyn Error>> {
     match app_type {
@@ -357,7 +472,18 @@ if __name__ == '__main__':
     Ok(())
 }
 
-// Helper function to set up firewall rules
+/// Sets up firewall rules based on the configuration.
+///
+/// This function configures the firewall (ufw for Ubuntu, firewalld for CentOS/Fedora)
+/// with basic rules for SSH, HTTP, and HTTPS, as well as any custom rules specified in the configuration.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing firewall configuration
+///
+/// # Returns
+///
+/// Returns `Ok(())` if firewall rules are set up successfully, or an error if setup fails.
 fn setup_firewall_rules(config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 

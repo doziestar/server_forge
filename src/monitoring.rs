@@ -1,3 +1,9 @@
+//! # Monitoring Module
+//!
+//! This module provides functionality for setting up a comprehensive monitoring system
+//! using Prometheus, Grafana, and Node Exporter. It handles the installation, configuration,
+//! and deployment of these tools across different Linux distributions.
+
 use crate::config::Config;
 use crate::distro::{get_package_manager, PackageManager};
 use crate::rollback::RollbackManager;
@@ -5,6 +11,19 @@ use crate::utils::run_command;
 use log::info;
 use std::error::Error;
 
+/// Sets up the monitoring system based on the provided configuration.
+///
+/// This function orchestrates the installation and configuration of Prometheus, Grafana,
+/// and Node Exporter. If monitoring is disabled in the configuration, it skips the setup.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing user-defined configuration options
+/// * `rollback` - A reference to the `RollbackManager` for managing system state
+///
+/// # Errors
+///
+/// Returns an error if any part of the monitoring setup process fails.
 pub fn setup_monitoring(config: &Config, rollback: &RollbackManager) -> Result<(), Box<dyn Error>> {
     if config.monitoring {
         info!("Setting up monitoring...");
@@ -25,6 +44,15 @@ pub fn setup_monitoring(config: &Config, rollback: &RollbackManager) -> Result<(
     Ok(())
 }
 
+/// Installs Prometheus and Grafana based on the system's package manager.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct (unused in the current implementation)
+///
+/// # Errors
+///
+/// Returns an error if the installation of either Prometheus or Grafana fails.
 pub fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -87,6 +115,14 @@ pub fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Configures Prometheus with a basic scrape configuration.
+///
+/// This function creates a basic Prometheus configuration file and
+/// restarts the Prometheus service.
+///
+/// # Errors
+///
+/// Returns an error if writing the configuration file or restarting the service fails.
 pub fn configure_prometheus() -> Result<(), Box<dyn Error>> {
     let prometheus_config = r#"
 global:
@@ -105,6 +141,15 @@ scrape_configs:
     Ok(())
 }
 
+/// Sets up and starts the Grafana server.
+///
+/// This function starts the Grafana server and enables it to start on boot.
+/// Additional configuration (like adding data sources or creating dashboards)
+/// could be added here in the future.
+///
+/// # Errors
+///
+/// Returns an error if starting or enabling the Grafana service fails.
 pub fn setup_grafana() -> Result<(), Box<dyn Error>> {
     run_command("systemctl", &["start", "grafana-server"])?;
     run_command("systemctl", &["enable", "grafana-server"])?;
@@ -115,6 +160,14 @@ pub fn setup_grafana() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up and starts the Node Exporter.
+///
+/// This function installs Node Exporter (either via package manager or from source),
+/// starts the Node Exporter service, and enables it to start on boot.
+///
+/// # Errors
+///
+/// Returns an error if installation, starting, or enabling the Node Exporter service fails.
 pub fn setup_node_exporter() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -134,6 +187,14 @@ pub fn setup_node_exporter() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Installs Prometheus from source.
+///
+/// This function is used for systems where Prometheus is not available
+/// through the package manager (e.g., CentOS, Fedora).
+///
+/// # Errors
+///
+/// Returns an error if any step of the source installation process fails.
 pub fn install_prometheus_from_source() -> Result<(), Box<dyn Error>> {
     run_command("wget", &["https://github.com/prometheus/prometheus/releases/download/v2.30.3/prometheus-2.30.3.linux-amd64.tar.gz"])?;
     run_command("tar", &["xvfz", "prometheus-2.30.3.linux-amd64.tar.gz"])?;
@@ -218,6 +279,14 @@ WantedBy=multi-user.target
     Ok(())
 }
 
+/// Installs Node Exporter from source.
+///
+/// This function is used for systems where Node Exporter is not available
+/// through the package manager (e.g., CentOS, Fedora).
+///
+/// # Errors
+///
+/// Returns an error if any step of the source installation process fails.
 pub fn install_node_exporter_from_source() -> Result<(), Box<dyn Error>> {
     run_command("wget", &["https://github.com/prometheus/node_exporter/releases/download/v1.2.2/node_exporter-1.2.2.linux-amd64.tar.gz"])?;
     run_command("tar", &["xvfz", "node_exporter-1.2.2.linux-amd64.tar.gz"])?;

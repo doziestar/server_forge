@@ -10,6 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
 
 jobs:
   check:
@@ -39,6 +40,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+          args: --all-features --test main -- --nocapture
 
   fmt:
     name: Rustfmt
@@ -82,18 +84,47 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
+      - name: Install mdBook
+        run: cargo install mdbook
+      - name: Build API docs
+        uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --no-deps
-      - uses: peaceiris/actions-gh-pages@v3
+          args: --no-deps --all-features
+      - name: Build mdBook docs
+        run: mdbook build docs
+      - name: Combine docs
+        run: |
+          mkdir -p ./public
+          cp -r ./target/doc ./public/api
+          cp -r ./docs/book ./public/guide
+          echo '<meta http-equiv="refresh" content="0; url=serverforge/index.html">' > ./public/index.html
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.TOKEN }}
-          publish_dir: ./target/doc
+          publish_dir: ./public
+          force_orphan: true
+
+  publish-dry-run:
+    name: Publish Dry Run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --dry-run
 
   release:
     name: Release
-    needs: [check, test, fmt, clippy, docs]
+    needs: [check, fmt, docs, publish-dry-run]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     strategy:
@@ -132,9 +163,26 @@ jobs:
           tag: ${{ github.ref }}
           overwrite: true
 
+  publish-crates-io:
+    name: Publish to crates.io
+    needs: [release]
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+
   homebrew:
     name: Update Homebrew Formula
-    needs: release
+    needs: [release]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:
@@ -146,7 +194,7 @@ jobs:
 
   linux-packages:
     name: Create Linux Packages
-    needs: release
+    needs: [release]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:

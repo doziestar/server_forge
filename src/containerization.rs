@@ -1,3 +1,12 @@
+//! # Containerization Module
+//!
+//! This module provides functionality for setting up and managing containerization
+//! technologies, specifically Docker and Kubernetes, on a Linux server. It includes
+//! functions for installation, configuration, and deployment of containerized applications.
+//!
+//! The module is designed to work across different Linux distributions by leveraging
+//! the appropriate package manager and installation methods for each system.
+
 use crate::config::Config;
 use crate::distro::{get_package_manager, PackageManager};
 use crate::rollback::RollbackManager;
@@ -5,6 +14,18 @@ use crate::utils::run_command;
 use log::info;
 use std::error::Error;
 
+/// Sets up Docker on the system.
+///
+/// This function installs Docker, configures it, and ensures it's running and enabled on boot.
+/// It creates a snapshot before installation for potential rollback.
+///
+/// # Arguments
+///
+/// * `rollback` - A reference to the `RollbackManager` for creating snapshots
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Docker is set up successfully, or an error if setup fails.
 pub fn setup_docker(rollback: &RollbackManager) -> Result<(), Box<dyn Error>> {
     info!("Setting up Docker...");
 
@@ -19,6 +40,18 @@ pub fn setup_docker(rollback: &RollbackManager) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up Kubernetes on the system.
+///
+/// This function installs Kubernetes tools (kubectl and minikube), configures them,
+/// and ensures they're ready for use. It creates a snapshot before installation for potential rollback.
+///
+/// # Arguments
+///
+/// * `rollback` - A reference to the `RollbackManager` for creating snapshots
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Kubernetes is set up successfully, or an error if setup fails.
 pub fn setup_kubernetes(rollback: &RollbackManager) -> Result<(), Box<dyn Error>> {
     info!("Setting up Kubernetes...");
 
@@ -33,6 +66,19 @@ pub fn setup_kubernetes(rollback: &RollbackManager) -> Result<(), Box<dyn Error>
     Ok(())
 }
 
+/// Deploys containers for all applications specified in the configuration.
+///
+/// This function iterates through the list of applications in the configuration
+/// and deploys each as a container, either using Docker or Kubernetes based on the configuration.
+///
+/// # Arguments
+///
+/// * `config` - A reference to the `Config` struct containing deployment information
+/// * `rollback` - A reference to the `RollbackManager` for creating snapshots
+///
+/// # Returns
+///
+/// Returns `Ok(())` if all containers are deployed successfully, or an error if any deployment fails.
 pub fn deploy_containers(
     config: &Config,
     rollback: &RollbackManager,
@@ -50,6 +96,14 @@ pub fn deploy_containers(
     Ok(())
 }
 
+/// Installs Docker on the system.
+///
+/// This function installs Docker using the appropriate method for the current Linux distribution.
+/// It adds the Docker repository, installs necessary dependencies, and installs Docker components.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Docker is installed successfully, or an error if installation fails.
 pub fn install_docker() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -142,6 +196,14 @@ pub fn install_docker() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Configures Docker after installation.
+///
+/// This function sets up the Docker daemon with optimal settings, creates a Docker group,
+/// adds the current user to the Docker group, and restarts the Docker service to apply changes.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Docker is configured successfully, or an error if configuration fails.
 pub fn configure_docker() -> Result<(), Box<dyn Error>> {
     // Create docker group if it doesn't exist
     run_command("groupadd", &["docker"])?;
@@ -174,6 +236,14 @@ pub fn configure_docker() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Installs Kubernetes tools (kubectl and minikube) on the system.
+///
+/// This function downloads and installs kubectl and minikube, and installs a virtualization
+/// driver (VirtualBox in this implementation) required for running Kubernetes locally.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Kubernetes tools are installed successfully, or an error if installation fails.
 pub fn install_kubernetes() -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
@@ -204,6 +274,14 @@ pub fn install_kubernetes() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Configures Kubernetes after installation.
+///
+/// This function starts minikube, enables necessary addons (ingress and dashboard),
+/// and sets up kubectl autocomplete for easier use.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if Kubernetes is configured successfully, or an error if configuration fails.
 pub fn configure_kubernetes() -> Result<(), Box<dyn Error>> {
     // Start minikube
     run_command("minikube", &["start"])?;
@@ -221,6 +299,19 @@ pub fn configure_kubernetes() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Deploys a single container for the specified application.
+///
+/// This function deploys the application either to Kubernetes or directly to Docker,
+/// based on the `use_kubernetes` flag.
+///
+/// # Arguments
+///
+/// * `app` - A string slice representing the application to deploy
+/// * `use_kubernetes` - A boolean indicating whether to use Kubernetes for deployment
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the container is deployed successfully, or an error if deployment fails.
 pub fn deploy_container(app: &str, use_kubernetes: bool) -> Result<(), Box<dyn Error>> {
     if use_kubernetes {
         deploy_to_kubernetes(app)?;
@@ -230,6 +321,19 @@ pub fn deploy_container(app: &str, use_kubernetes: bool) -> Result<(), Box<dyn E
     Ok(())
 }
 
+/// Deploys a single container for the specified application.
+///
+/// This function deploys the application either to Kubernetes or directly to Docker,
+/// based on the `use_kubernetes` flag.
+///
+/// # Arguments
+///
+/// * `app` - A string slice representing the application to deploy
+/// * `use_kubernetes` - A boolean indicating whether to use Kubernetes for deployment
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the container is deployed successfully, or an error if deployment fails.
 pub fn deploy_to_kubernetes(app: &str) -> Result<(), Box<dyn Error>> {
     // Create a basic deployment YAML
     let deployment_yaml = format!(
@@ -281,6 +385,18 @@ spec:
     Ok(())
 }
 
+/// Deploys an application to Kubernetes.
+///
+/// This function creates a Kubernetes Deployment and Service for the specified application.
+/// It generates a basic YAML configuration, applies it to the cluster, and exposes the deployment as a service.
+///
+/// # Arguments
+///
+/// * `app` - A string slice representing the application to deploy
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the application is deployed to Kubernetes successfully, or an error if deployment fails.
 pub fn deploy_to_docker(app: &str) -> Result<(), Box<dyn Error>> {
     // Pull the latest image
     run_command("docker", &["pull", app])?;
