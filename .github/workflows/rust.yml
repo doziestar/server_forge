@@ -135,12 +135,9 @@ jobs:
 
   release:
     name: Release
-    needs: [ check, fmt, docs, publish-dry-run ]
+    needs: [ check, fmt, docs ]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        target: [ x86_64-unknown-linux-gnu ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
@@ -148,49 +145,47 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-          target: ${{ matrix.target }}
+          target: x86_64-unknown-linux-gnu
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target ${{ matrix.target }}
+          args: --release --target x86_64-unknown-linux-gnu
       - name: Package
-        shell: bash
         run: |
-          cd target/${{ matrix.target }}/release
+          cd target/x86_64-unknown-linux-gnu/release
           echo "Contents of release directory:"
           ls -la
-
+          
           BINARY_NAME="server_forge"
-          if [[ ! -f "$BINARY_NAME" && ! -f "${BINARY_NAME}.exe" ]]; then
+          if [ ! -f "$BINARY_NAME" ]; then
             echo "Error: Expected binary $BINARY_NAME not found"
             exit 1
           fi
-
+          
           echo "Found binary: $BINARY_NAME"
-
-          ARCHIVE_NAME="server_forge-${{ matrix.target }}"
-
-          case ${{ matrix.target }} in
-            x86_64-pc-windows-msvc)
-              7z a "../../../${ARCHIVE_NAME}.zip" "${BINARY_NAME}.exe"
-              ;;
-            *)
-              tar czvf "../../../${ARCHIVE_NAME}.tar.gz" "$BINARY_NAME"
-              ;;
-          esac
-
-          echo "Created archive: ${ARCHIVE_NAME}"
-          cd ../../..
-          ls -la "${ARCHIVE_NAME}"*
-      - name: Upload binaries to release
+          
+          ARCHIVE_NAME="server_forge-x86_64-unknown-linux-gnu.tar.gz"
+          tar czvf "../../../$ARCHIVE_NAME" "$BINARY_NAME"
+          
+          cd ../          
+          echo "Contents of root directory:"
+          ls -la
+          echo "Archive details:"
+          ls -l $ARCHIVE_NAME
+      - name: Upload binary to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.TOKEN }}
-          file: server_forge-${{ matrix.target }}.*
-          asset_name: server_forge-${{ matrix.target }}
+          file: server_forge-x86_64-unknown-linux-gnu.tar.gz
+          asset_name: server_forge-x86_64-unknown-linux-gnu.tar.gz
           tag: ${{ github.ref }}
           overwrite: true
+      - name: Debug - List all files
+        if: failure()
+        run: |
+          echo "Contents of current directory:"
+          ls -R
 
   publish-crates-io:
     name: Publish to crates.io
