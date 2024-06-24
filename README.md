@@ -16,37 +16,110 @@ ServerForge is a robust, customizable server setup and maintenance tool written 
 
 ## Prerequisites
 
-- Rust 1.54 or higher
-- Root access on the target Linux system
+- Root access on the target system (for Linux and macOS)
+- Administrator privileges (for Windows)
 
 ## Installation
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/doziestar/server_forge.git
-   ```
+### macOS
 
-2. Navigate to the project directory:
-   ```
-   cd server_forge
-   ```
+Using Homebrew:
 
-3. Build the project:
-   ```
-   cargo build --release
-   ```
+```bash
+brew install doziestar/tap/serverforge
+```
+
+To update:
+
+```bash
+brew upgrade serverforge
+```
+
+### Linux
+
+#### Ubuntu/Debian
+
+```bash
+# Add our repository
+echo "deb [trusted=yes] https://apt.fury.io/doziestar/ /" | sudo tee /etc/apt/sources.list.d/doziestar.list
+# Update package list
+sudo apt update
+# Install ServerForge
+sudo apt install serverforge
+```
+
+To update:
+
+```bash
+sudo apt update
+sudo apt upgrade serverforge
+```
+
+#### CentOS/RHEL
+
+```bash
+# Add our repository
+sudo yum-config-manager --add-repo https://yum.fury.io/doziestar/
+# Install ServerForge
+sudo yum install serverforge
+```
+
+To update:
+
+```bash
+sudo yum update serverforge
+```
+
+#### Fedora
+
+```bash
+# Add our repository
+sudo dnf config-manager --add-repo https://yum.fury.io/doziestar/
+# Install ServerForge
+sudo dnf install serverforge
+```
+
+To update:
+
+```bash
+sudo dnf update serverforge
+```
+
+### Windows
+
+1. Download the latest release from our [GitHub Releases page](https://github.com/doziestar/serverforge/releases).
+2. Extract the zip file.
+3. Run the `serverforge.exe` file with administrator privileges.
+
+To update, simply download and replace the existing `serverforge.exe` with the new version.
+
+### Manual Installation (All Platforms)
+
+You can also install ServerForge using our install script:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/doziestar/serverforge/main/install.sh | bash
+```
+
+This script will detect your OS and architecture and install the appropriate version of ServerForge.
 
 ## Usage
 
-Run ServerForge with root privileges:
+Run ServerForge with appropriate privileges:
 
+On Linux/macOS:
+```bash
+sudo serverforge
 ```
-sudo ./target/release/server_forge
+
+On Windows (run Command Prompt as Administrator):
+```cmd
+serverforge
 ```
 
 Follow the interactive prompts to configure your server. ServerForge will ask for information such as:
 
-- Linux distribution
+- Linux distribution (for Linux installations)
 - Server role
 - Security level
 - Monitoring preferences
