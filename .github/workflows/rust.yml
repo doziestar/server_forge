@@ -86,6 +86,17 @@ jobs:
           override: true
       - name: Install mdBook
         run: cargo install mdbook
+      - name: Setup mdBook if not exists
+        run: |
+          if [ ! -d "docs" ]; then
+            mkdir docs
+            cd docs
+            mdbook init
+            echo "# ServerForge" > src/chapter_1.md
+            echo "# Summary" > src/SUMMARY.md
+            echo "" >> src/SUMMARY.md
+            echo "- [Chapter 1](./chapter_1.md)" >> src/SUMMARY.md
+          fi
       - name: Build API docs
         uses: actions-rs/cargo@v1
         with:
