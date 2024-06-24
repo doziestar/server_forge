@@ -135,12 +135,12 @@ jobs:
 
   release:
     name: Release
-    needs: [check, fmt, docs, publish-dry-run]
+    needs: [ check, fmt, docs, publish-dry-run ]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin]
+        target: [ x86_64-unknown-linux-gnu ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
@@ -149,26 +149,60 @@ jobs:
           toolchain: stable
           override: true
           target: ${{ matrix.target }}
-      - uses: actions-rs/cargo@v1
+      - name: Build
+        uses: actions-rs/cargo@v1
         with:
           command: build
           args: --release --target ${{ matrix.target }}
+      - name: Debug - Print Cargo metadata
+        run: cargo metadata --format-version=1
+      - name: Debug - List directory contents
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Contents of current directory:"
+          ls -la
+          echo "Contents of target directory:"
+          ls -la target
+          echo "Contents of target/${{ matrix.target }} directory:"
+          ls -la target/${{ matrix.target }}
+          echo "Contents of target/${{ matrix.target }}/release directory:"
+          ls -la target/${{ matrix.target }}/release
       - name: Package
         shell: bash
         run: |
           cd target/${{ matrix.target }}/release
+          echo "Contents of release directory:"
+          ls -la
+
+          # Try to find the binary
+          BINARY_NAME=""
+          for file in *; do
+            if [[ -x "$file" && ! -d "$file" ]]; then
+              BINARY_NAME="$file"
+              break
+            fi
+          done
+
+          if [[ -z "$BINARY_NAME" ]]; then
+            echo "Error: No executable binary found"
+            exit 1
+          fi
+
+          echo "Found binary: $BINARY_NAME"
+
           case ${{ matrix.target }} in
             x86_64-pc-windows-msvc)
-              7z a ../../../serverforge-${{ matrix.target }}.zip serverforge.exe
+              7z a ../../../serverforge-${{ matrix.target }}.zip "$BINARY_NAME"
               ;;
             *)
-              tar czvf ../../../serverforge-${{ matrix.target }}.tar.gz serverforge
+              tar czvf ../../../serverforge-${{ matrix.target }}.tar.gz "$BINARY_NAME"
               ;;
           esac
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: serverforge-${{ matrix.target }}.*
           asset_name: serverforge-${{ matrix.target }}
           tag: ${{ github.ref }}
@@ -190,18 +224,6 @@ jobs:
         with:
           command: publish
           args: --token ${{ secrets.CRATES_IO_TOKEN }}
-
-  homebrew:
-    name: Update Homebrew Formula
-    needs: [release]
-    if: github.event_name == 'release' && github.event.action == 'created'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Update Homebrew formula
-        uses: dawidd6/action-homebrew-bump-formula@v3
-        with:
-          token: ${{ secrets.TOKEN }}
-          formula: serverforge
 
   linux-packages:
     name: Create Linux Packages
