@@ -1,22 +1,200 @@
-name: Rust
+name: Rust CI/CD
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [created]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check:
+    name: Check
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: rustup component add clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --no-deps
+      - uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.TOKEN }}
+          publish_dir: ./target/doc
+
+  release:
+    name: Release
+    needs: [check, test, fmt, clippy, docs]
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, x86_64-apple-darwin, x86_64-pc-windows-msvc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+      - name: Package
+        shell: bash
+        run: |
+          cd target/${{ matrix.target }}/release
+          case ${{ matrix.target }} in
+            x86_64-pc-windows-msvc)
+              7z a ../../../serverforge-${{ matrix.target }}.zip serverforge.exe
+              ;;
+            *)
+              tar czvf ../../../serverforge-${{ matrix.target }}.tar.gz serverforge
+              ;;
+          esac
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.TOKEN }}
+          file: serverforge-${{ matrix.target }}.*
+          asset_name: serverforge-${{ matrix.target }}
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  homebrew:
+    name: Update Homebrew Formula
+    needs: release
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew formula
+        uses: dawidd6/action-homebrew-bump-formula@v3
+        with:
+          token: ${{ secrets.TOKEN }}
+          formula: serverforge
+
+  linux-packages:
+    name: Create Linux Packages
+    needs: release
+    if: github.event_name == 'release' && github.event.action == 'created'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create DEB package
+        run: |
+          mkdir -p serverforge_${{ github.ref_name }}_amd64/DEBIAN
+          echo "Package: serverforge
+          Version: ${{ github.ref_name }}
+          Architecture: amd64
+          Maintainer: Your Name <your.email@example.com>
+          Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ github.ref_name }}_amd64/DEBIAN/control
+          mkdir -p serverforge_${{ github.ref_name }}_amd64/usr/local/bin
+          cp target/x86_64-unknown-linux-gnu/release/serverforge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
+          dpkg-deb --build serverforge_${{ github.ref_name }}_amd64
+      - name: Create RPM package
+        run: |
+          mkdir -p ~/rpmbuild/{SPECS,SOURCES}
+          cp target/x86_64-unknown-linux-gnu/release/serverforge ~/rpmbuild/SOURCES/
+          echo "Name: serverforge
+          Version: ${{ github.ref_name }}
+          Release: 1
+          Summary: ServerForge - A robust server setup and maintenance tool
+          License: MIT
+          
+          %description
+          ServerForge is a robust server setup and maintenance tool.
+          
+          %files
+          /usr/local/bin/serverforge
+          
+          %install
+          mkdir -p %{buildroot}/usr/local/bin
+          cp %{_sourcedir}/serverforge %{buildroot}/usr/local/bin/
+          
+          %clean
+          rm -rf %{buildroot}" > ~/rpmbuild/SPECS/serverforge.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/serverforge.spec
+      - name: Upload Linux packages
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: |
+            ./serverforge_${{ github.ref_name }}_amd64.deb
+            ~/rpmbuild/RPMS/x86_64/serverforge-${{ github.ref_name }}-1.x86_64.rpm
+          asset_name: |
+            serverforge_${{ github.ref_name }}_amd64.deb
+            serverforge-${{ github.ref_name }}-1.x86_64.rpm
+          asset_content_type: application/octet-stream
