@@ -168,13 +168,22 @@ jobs:
           ARCHIVE_NAME="server_forge-x86_64-unknown-linux-gnu.tar.gz"
           tar czvf "../../../$ARCHIVE_NAME" "$BINARY_NAME"
           
-          cd ../          
+          echo "Contents of current directory after creating archive:"
+          ls -la
+          
+          cd ../../../
           echo "Contents of root directory:"
           ls -la
+          
           echo "Archive details:"
           ls -l $ARCHIVE_NAME
+          
+          echo "Full path of archive:"
+          readlink -f $ARCHIVE_NAME
+          
+          echo "Searching for archive:"
+          find . -name "$ARCHIVE_NAME"
       - name: Upload binary to release
-        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.TOKEN }}
           file: server_forge-x86_64-unknown-linux-gnu.tar.gz
@@ -186,6 +195,8 @@ jobs:
         run: |
           echo "Contents of current directory:"
           ls -R
+          echo "Searching for archive in entire workspace:"
+          find $GITHUB_WORKSPACE -name "server_forge-x86_64-unknown-linux-gnu.tar.gz"
 
   publish-crates-io:
     name: Publish to crates.io
