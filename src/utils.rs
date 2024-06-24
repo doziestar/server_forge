@@ -6,7 +6,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::process::Command;
 
-pub(crate) fn setup_logging() -> Result<(), Box<dyn Error>> {
+pub fn setup_logging() -> Result<(), Box<dyn Error>> {
     let log_file = format!(
         "/var/log/server_setup_{}.log",
         Local::now().format("%Y%m%d_%H%M%S")
@@ -29,7 +29,7 @@ pub(crate) fn setup_logging() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub(crate) fn get_user_input() -> Result<Config, Box<dyn Error>> {
+pub fn get_user_input() -> Result<Config, Box<dyn Error>> {
     let mut config = Config::default();
 
     config.linux_distro = prompt("Enter Linux distribution (ubuntu/centos/fedora): ")?;
@@ -67,7 +67,7 @@ fn prompt(question: &str) -> Result<String, Box<dyn Error>> {
     Ok(input.trim().to_string())
 }
 
-pub(crate) fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
     let config_path = "/etc/server_setup_config.json";
     let config_json = serde_json::to_string_pretty(config)?;
     fs::write(config_path, config_json)?;
@@ -75,7 +75,7 @@ pub(crate) fn save_config(config: &Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-pub(crate) fn run_command(command: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
+pub fn run_command(command: &str, args: &[&str]) -> Result<(), Box<dyn Error>> {
     info!("Running command: {} {:?}", command, args);
     let output = Command::new(command).args(args).output()?;
     if !output.status.success() {
@@ -91,7 +91,7 @@ pub(crate) fn run_command(command: &str, args: &[&str]) -> Result<(), Box<dyn Er
     Ok(())
 }
 
-pub(crate) fn generate_report(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn generate_report(config: &Config) -> Result<(), Box<dyn Error>> {
     let report_path = "/root/server_setup_report.txt";
     let mut report = String::new();
 

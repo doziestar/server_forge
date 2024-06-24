@@ -1,201 +1,124 @@
-use crate::common;
-use crate::common::{MockConfig, MockRollbackManager};
-use mockall::predicate::eq;
-use server_forge::deployment::{
-    deploy_apache, deploy_app, deploy_applications, deploy_mysql, deploy_nginx, deploy_nodejs,
-    deploy_php, deploy_postgresql, deploy_python, setup_database, setup_web_server_config,
-};
-use server_forge::distro::PackageManager;
-
-#[test]
-fn test_deploy_applications() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        deployed_apps: vec!["nginx".to_string(), "mysql".to_string()],
-        server_role: "web".to_string(),
-        ..Default::default()
-    };
-    let rollback = MockRollbackManager::new();
-
-    mock.expect_run().times(4).returning(|_, _| Ok(()));
-
-    assert!(deploy_applications(&config, &rollback).is_ok());
-}
-
-#[test]
-fn test_deploy_app() {
-    let mut mock = common::MockCommandRunner::new();
-    let server_role = "web";
-
-    // Test nginx deployment
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
-    assert!(deploy_app("nginx", server_role).is_ok());
-
-    // Test unsupported app
-    assert!(deploy_app("unsupported-app", server_role).is_err());
-}
+use server_forge::config::Config;
+use server_forge::deployment;
+use server_forge::rollback::RollbackManager;
 
 #[test]
 fn test_deploy_nginx() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(deployment::deploy_nginx().is_ok());
 
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "nginx"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "nginx"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "nginx"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify Nginx installation
+    let nginx_status = std::process::Command::new("which")
+        .arg("nginx")
+        .status()
+        .unwrap();
+    assert!(nginx_status.success());
 
-    assert!(deploy_nginx().is_ok());
+    // Verify Nginx service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "nginx"])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
 }
 
 #[test]
 fn test_deploy_apache() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(deployment::deploy_apache().is_ok());
 
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "apache2"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "apache2"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "apache2"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify Apache installation (either apache2 or httpd)
+    let apache_status = std::process::Command::new("which")
+        .arg("apache2")
+        .status()
+        .unwrap_or_else(|_| {
+            std::process::Command::new("which")
+                .arg("httpd")
+                .status()
+                .unwrap()
+        });
+    assert!(apache_status.success());
 
-    assert!(deploy_apache().is_ok());
+    // Verify Apache service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "apache2"])
+        .status()
+        .unwrap_or_else(|_| {
+            std::process::Command::new("systemctl")
+                .args(&["is-active", "httpd"])
+                .status()
+                .unwrap()
+        });
+    assert!(service_status.success());
 }
 
 #[test]
 fn test_deploy_mysql() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(deployment::deploy_mysql().is_ok());
 
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "mysql-server"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "mysql"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "mysql"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("mysql_secure_installation"), eq(&[]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify MySQL installation
+    let mysql_status = std::process::Command::new("which")
+        .arg("mysql")
+        .status()
+        .unwrap();
+    assert!(mysql_status.success());
 
-    assert!(deploy_mysql().is_ok());
+    // Verify MySQL service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "mysql"])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
 }
 
 #[test]
 fn test_deploy_postgresql() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(deployment::deploy_postgresql().is_ok());
 
-    mock.expect_run()
-        .with(
-            eq("apt"),
-            eq(&["install", "-y", "postgresql", "postgresql-contrib"]),
-        )
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "postgresql"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "postgresql"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify PostgreSQL installation
+    let psql_status = std::process::Command::new("which")
+        .arg("psql")
+        .status()
+        .unwrap();
+    assert!(psql_status.success());
 
-    assert!(deploy_postgresql().is_ok());
+    // Verify PostgreSQL service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "postgresql"])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
 }
 
 #[test]
 fn test_deploy_php() {
-    let mut mock = common::MockCommandRunner::new();
     let server_role = "web";
+    assert!(deployment::deploy_php(server_role).is_ok());
 
-    mock.expect_run()
-        .with(
-            eq("apt"),
-            eq(&["install", "-y", "php", "php-fpm", "php-mysql"]),
-        )
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "libapache2-mod-php"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "php-fpm"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "php-fpm"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify PHP installation
+    let php_status = std::process::Command::new("which")
+        .arg("php")
+        .status()
+        .unwrap();
+    assert!(php_status.success());
 
-    assert!(deploy_php(&PackageManager::Apt).is_ok());
+    // Verify PHP-FPM service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "php-fpm"])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
 }
 
 #[test]
-fn test_deploy_nodejs() {
-    let mut mock = common::MockCommandRunner::new();
+fn test_deploy_applications() {
+    let config = Config {
+        deployed_apps: vec![
+            String::from("nginx"),
+            String::from("mysql"),
+            String::from("php"),
+        ],
+        ..Default::default()
+    };
+    let rollback_manager = RollbackManager::new();
 
-    mock.expect_run().times(5).returning(|_, _| Ok(()));
-
-    assert!(deploy_nodejs().is_ok());
-}
-
-#[test]
-fn test_deploy_python() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run()
-        .with(
-            eq("apt"),
-            eq(&["install", "-y", "python3", "python3-pip", "python3-venv"]),
-        )
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("pip3"), eq(&["install", "virtualenv"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-
-    assert!(deploy_python().is_ok());
-}
-
-#[test]
-fn test_setup_web_server_config() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(1).returning(|_, _| Ok(()));
-
-    assert!(setup_web_server_config("nginx").is_ok());
-    assert!(setup_web_server_config("apache").is_ok());
-    assert!(setup_web_server_config("unsupported").is_err());
-}
-
-#[test]
-fn test_setup_database() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
-
-    assert!(setup_database("mysql").is_ok());
-    assert!(setup_database("postgresql").is_ok());
-    assert!(setup_database("unsupported").is_err());
+    assert!(deployment::deploy_applications(&config, &rollback_manager).is_ok());
 }

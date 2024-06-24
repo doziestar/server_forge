@@ -1,107 +1,80 @@
-use crate::common;
-use crate::common::{MockConfig, MockRollbackManager};
-use server_forge::monitoring::{
-    configure_prometheus, install_monitoring_tools, install_node_exporter_from_source,
-    install_prometheus_from_source, setup_grafana, setup_monitoring, setup_node_exporter,
-};
-
-#[test]
-fn test_setup_monitoring() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        monitoring: true,
-        linux_distro: "ubuntu".to_string(),
-        ..Default::default()
-    };
-    let rollback = MockRollbackManager::new();
-
-    mock.expect_run().times(15).returning(|_, _| Ok(()));
-
-    assert!(setup_monitoring(&config, &rollback).is_ok());
-
-    // Test when monitoring is disabled
-    let config_disabled = MockConfig {
-        monitoring: false,
-        ..Default::default()
-    };
-    assert!(setup_monitoring(&config_disabled, &rollback).is_ok());
-}
+use server_forge::config::Config;
+use server_forge::monitoring;
+use server_forge::rollback::RollbackManager;
+use std::fs;
 
 #[test]
 fn test_install_monitoring_tools() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        linux_distro: "ubuntu".to_string(),
+    let config = Config {
+        monitoring: true,
         ..Default::default()
     };
 
-    mock.expect_run().times(6).returning(|_, _| Ok(()));
+    assert!(monitoring::install_monitoring_tools(&config).is_ok());
 
-    assert!(install_monitoring_tools(&config).is_ok());
+    // Verify Prometheus installation
+    let prometheus_status = std::process::Command::new("which")
+        .arg("prometheus")
+        .status()
+        .unwrap();
+    assert!(prometheus_status.success());
+
+    // Verify Grafana installation
+    let grafana_status = std::process::Command::new("which")
+        .arg("grafana-server")
+        .status()
+        .unwrap();
+    assert!(grafana_status.success());
 }
 
 #[test]
 fn test_configure_prometheus() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(monitoring::configure_prometheus().is_ok());
 
-    mock.expect_run().times(2).returning(|_, _| Ok(()));
+    // Verify Prometheus configuration
+    let prometheus_config = fs::read_to_string("/etc/prometheus/prometheus.yml").unwrap();
+    assert!(prometheus_config.contains("scrape_configs:"));
+    assert!(prometheus_config.contains("job_name: 'node'"));
 
-    assert!(configure_prometheus().is_ok());
-    assert!(configure_prometheus().is_ok());
+    // Verify Prometheus service is running
+    let status = std::process::Command::new("systemctl")
+        .args(&["is-active", "prometheus"])
+        .status()
+        .unwrap();
+    assert!(status.success());
 }
 
 #[test]
 fn test_setup_grafana() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(monitoring::setup_grafana().is_ok());
 
-    mock.expect_run().times(2).returning(|_, _| Ok(()));
-
-    assert!(setup_grafana().is_ok());
+    // Verify Grafana service is running
+    let status = std::process::Command::new("systemctl")
+        .args(&["is-active", "grafana-server"])
+        .status()
+        .unwrap();
+    assert!(status.success());
 }
 
 #[test]
 fn test_setup_node_exporter() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        linux_distro: "ubuntu".to_string(),
-        ..Default::default()
-    };
+    assert!(monitoring::setup_node_exporter().is_ok());
 
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
-
-    assert!(setup_node_exporter().is_ok());
+    // Verify Node Exporter service is running
+    let status = std::process::Command::new("systemctl")
+        .args(&["is-active", "node_exporter"])
+        .status()
+        .unwrap();
+    assert!(status.success());
 }
 
 #[test]
-fn test_install_prometheus_from_source() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(12).returning(|_, _| Ok(()));
-
-    assert!(install_prometheus_from_source().is_ok());
-}
-
-#[test]
-fn test_install_node_exporter_from_source() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(6).returning(|_, _| Ok(()));
-
-    assert!(install_node_exporter_from_source().is_ok());
-}
-
-#[test]
-fn test_monitoring_error_handling() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
+fn test_setup_monitoring() {
+    let config = Config {
         monitoring: true,
-        linux_distro: "unsupported".to_string(),
         ..Default::default()
     };
-    let rollback = MockRollbackManager::new();
+    let rollback_manager = RollbackManager::new();
 
-    mock.expect_run()
-        .returning(|_, _| Err("Command failed".into()));
-
-    assert!(setup_monitoring(&config, &rollback).is_err());
+    assert!(monitoring::setup_monitoring(&config, &rollback_manager).is_ok());
 }

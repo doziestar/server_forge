@@ -1,93 +1,66 @@
-use crate::common::MockCommandRunner;
-use mockall::predicate::*;
-use server_forge::config::Config;
 use server_forge::rollback::RollbackManager;
-use server_forge::security::{
-    configure_fail2ban, implement_security_measures, setup_advanced_security,
-    setup_rootkit_detection, setup_security_scans,
-};
+use std::fs;
 
 #[test]
-fn test_implement_security_measures() {
-    let mut mock = MockCommandRunner::new();
-    mock.expect_run().returning(|_, _| Ok(()));
-
-    let config = Config::default();
-    let rollback = RollbackManager::new();
-
-    assert!(implement_security_measures(&config, &rollback).is_ok());
+fn test_create_snapshot() {
+    let rollback_manager = RollbackManager::new();
+    let snapshot_id = rollback_manager.create_snapshot().unwrap();
+    assert!(snapshot_id > 0);
 }
 
 #[test]
-fn test_configure_fail2ban() {
-    let mut mock = MockCommandRunner::new();
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+fn test_add_file_change() {
+    let rollback_manager = RollbackManager::new();
+    let snapshot_id = rollback_manager.create_snapshot().unwrap();
 
-    assert!(configure_fail2ban().is_ok());
+    let test_file = "/tmp/test_rollback.txt";
+    fs::write(test_file, "original content").unwrap();
+
+    assert!(rollback_manager
+        .add_file_change(snapshot_id, test_file)
+        .is_ok());
+
+    // Modify the file
+    fs::write(test_file, "modified content").unwrap();
+
+    // Rollback
+    assert!(rollback_manager.rollback_to(snapshot_id).is_ok());
+
+    // Verify the file content is back to original
+    let content = fs::read_to_string(test_file).unwrap();
+    assert_eq!(content, "original content");
 }
 
 #[test]
-fn test_setup_advanced_security() {
-    let mut mock = MockCommandRunner::new();
-    let mut config = Config::default();
-    config.security_level = "advanced".to_string();
-    config.linux_distro = "ubuntu".to_string();
+fn test_add_package_installed() {
+    let rollback_manager = RollbackManager::new();
+    let snapshot_id = rollback_manager.create_snapshot().unwrap();
 
-    mock.expect_run()
-        .with(
-            eq("apt"),
-            eq(&["install", "-y", "apparmor", "apparmor-utils"]),
-        )
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("aa-enforce"), eq(&["/etc/apparmor.d/*"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    let test_package = "htop";
 
-    assert!(setup_advanced_security(&config).is_ok());
-}
+    // Install the package
+    std::process::Command::new("apt-get")
+        .args(&["install", "-y", test_package])
+        .status()
+        .unwrap();
 
-#[test]
-fn test_setup_rootkit_detection() {
-    let mut mock = MockCommandRunner::new();
-    let config = Config::default();
+    assert!(rollback_manager
+        .add_package_installed(snapshot_id, test_package)
+        .is_ok());
 
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "rkhunter", "chkrootkit"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("rkhunter"), eq(&["--update"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("rkhunter"), eq(&["--propupd"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Uninstall the package
+    std::process::Command::new("apt-get")
+        .args(&["remove", "-y", test_package])
+        .status()
+        .unwrap();
 
-    assert!(setup_rootkit_detection(&config).is_ok());
-}
+    // Rollback
+    assert!(rollback_manager.rollback_to(snapshot_id).is_ok());
 
-#[test]
-fn test_setup_security_scans() {
-    let mut mock = MockCommandRunner::new();
-
-    mock.expect_run()
-        .with(eq("chmod"), eq(&["+x", "/usr/local/bin/security_scan.sh"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-
-    assert!(setup_security_scans().is_ok());
+    // Verify the package is installed
+    let status = std::process::Command::new("which")
+        .arg(test_package)
+        .status()
+        .unwrap();
+    assert!(status.success());
 }

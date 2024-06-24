@@ -1,93 +1,81 @@
-use crate::common::MockCommandRunner;
-use mockall::predicate::*;
 use server_forge::config::Config;
 use server_forge::rollback::RollbackManager;
-use server_forge::security::{
-    configure_fail2ban, implement_security_measures, setup_advanced_security,
-    setup_rootkit_detection, setup_security_scans,
-};
-
-#[test]
-fn test_implement_security_measures() {
-    let mut mock = MockCommandRunner::new();
-    mock.expect_run().returning(|_, _| Ok(()));
-
-    let config = Config::default();
-    let rollback = RollbackManager::new();
-
-    assert!(implement_security_measures(&config, &rollback).is_ok());
-}
+use server_forge::security;
+use std::fs;
 
 #[test]
 fn test_configure_fail2ban() {
-    let mut mock = MockCommandRunner::new();
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["enable", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("systemctl"), eq(&["start", "fail2ban"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    assert!(security::configure_fail2ban().is_ok());
 
-    assert!(configure_fail2ban().is_ok());
+    // Verify fail2ban configuration
+    let fail2ban_config = fs::read_to_string("/etc/fail2ban/jail.local").unwrap();
+    assert!(fail2ban_config.contains("[sshd]"));
+    assert!(fail2ban_config.contains("maxretry = 3"));
+
+    // Verify fail2ban service is running
+    let status = std::process::Command::new("systemctl")
+        .args(&["is-active", "fail2ban"])
+        .status()
+        .unwrap();
+    assert!(status.success());
 }
 
 #[test]
 fn test_setup_advanced_security() {
-    let mut mock = MockCommandRunner::new();
-    let mut config = Config::default();
-    config.security_level = "advanced".to_string();
-    config.linux_distro = "ubuntu".to_string();
+    let config = Config {
+        linux_distro: String::from("ubuntu"),
+        security_level: String::from("advanced"),
+        ..Default::default()
+    };
 
-    mock.expect_run()
-        .with(
-            eq("apt"),
-            eq(&["install", "-y", "apparmor", "apparmor-utils"]),
-        )
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("aa-enforce"), eq(&["/etc/apparmor.d/*"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    assert!(security::setup_advanced_security(&config).is_ok());
 
-    assert!(setup_advanced_security(&config).is_ok());
+    // Verify AppArmor is enforcing (for Ubuntu)
+    if config.linux_distro == "ubuntu" {
+        let status = std::process::Command::new("aa-status").status().unwrap();
+        assert!(status.success());
+    }
 }
 
 #[test]
 fn test_setup_rootkit_detection() {
-    let mut mock = MockCommandRunner::new();
     let config = Config::default();
+    assert!(security::setup_rootkit_detection(&config).is_ok());
 
-    mock.expect_run()
-        .with(eq("apt"), eq(&["install", "-y", "rkhunter", "chkrootkit"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("rkhunter"), eq(&["--update"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
-    mock.expect_run()
-        .with(eq("rkhunter"), eq(&["--propupd"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify rkhunter and chkrootkit are installed
+    let rkhunter_status = std::process::Command::new("which")
+        .arg("rkhunter")
+        .status()
+        .unwrap();
+    assert!(rkhunter_status.success());
 
-    assert!(setup_rootkit_detection(&config).is_ok());
+    let chkrootkit_status = std::process::Command::new("which")
+        .arg("chkrootkit")
+        .status()
+        .unwrap();
+    assert!(chkrootkit_status.success());
 }
 
 #[test]
 fn test_setup_security_scans() {
-    let mut mock = MockCommandRunner::new();
+    assert!(security::setup_security_scans().is_ok());
 
-    mock.expect_run()
-        .with(eq("chmod"), eq(&["+x", "/usr/local/bin/security_scan.sh"]))
-        .times(1)
-        .returning(|_, _| Ok(()));
+    // Verify security scan script
+    assert!(fs::metadata("/usr/local/bin/security_scan.sh").is_ok());
 
-    assert!(setup_security_scans().is_ok());
+    // Verify cron job
+    let cron_config = fs::read_to_string("/etc/cron.d/security_scan").unwrap();
+    assert!(cron_config.contains("security_scan.sh"));
+}
+
+#[test]
+fn test_implement_security_measures() {
+    let config = Config {
+        linux_distro: String::from("ubuntu"),
+        security_level: String::from("advanced"),
+        ..Default::default()
+    };
+    let rollback_manager = RollbackManager::new();
+
+    assert!(security::implement_security_measures(&config, &rollback_manager).is_ok());
 }

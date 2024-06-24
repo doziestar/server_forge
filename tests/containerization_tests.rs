@@ -1,127 +1,154 @@
-use crate::common;
-use crate::common::{MockConfig, MockRollbackManager};
-use server_forge::containerization::{
-    configure_docker, configure_kubernetes, deploy_container, deploy_containers, deploy_to_docker,
-    deploy_to_kubernetes, install_docker, install_kubernetes, setup_docker, setup_kubernetes,
-};
-
-#[test]
-fn test_setup_docker() {
-    let mut mock = common::CommandRunner::new();
-    let rollback = MockRollbackManager::new();
-
-    mock.expect_run().times(7).returning(|_, _| Ok(()));
-
-    assert!(setup_docker(&rollback).is_ok());
-}
-
-#[test]
-fn test_setup_kubernetes() {
-    let mut mock = common::MockCommandRunner::new();
-    let rollback = MockRollbackManager::new();
-
-    mock.expect_run().times(6).returning(|_, _| Ok(()));
-
-    assert!(setup_kubernetes(&rollback).is_ok());
-}
-
-#[test]
-fn test_deploy_containers() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        deployed_apps: vec!["app1".to_string(), "app2".to_string()],
-        use_kubernetes: true,
-        ..Default::default()
-    };
-    let rollback = MockRollbackManager::new();
-
-    mock.expect_run().times(6).returning(|_, _| Ok(()));
-
-    assert!(deploy_containers(&config, &rollback).is_ok());
-}
+use server_forge::config::Config;
+use server_forge::containerization;
+use server_forge::rollback::RollbackManager;
+use std::fs;
 
 #[test]
 fn test_install_docker() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(containerization::install_docker().is_ok());
 
-    mock.expect_run().times(7).returning(|_, _| Ok(()));
+    // Verify Docker installation
+    let docker_status = std::process::Command::new("docker")
+        .arg("--version")
+        .status()
+        .unwrap();
+    assert!(docker_status.success());
 
-    assert!(install_docker().is_ok());
+    // Verify Docker service is running
+    let service_status = std::process::Command::new("systemctl")
+        .args(&["is-active", "docker"])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
 }
 
 #[test]
 fn test_configure_docker() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(containerization::configure_docker().is_ok());
 
-    mock.expect_run().times(4).returning(|_, _| Ok(()));
-
-    assert!(configure_docker().is_ok());
+    // Verify Docker daemon configuration
+    let daemon_config = fs::read_to_string("/etc/docker/daemon.json").unwrap();
+    assert!(daemon_config.contains("log-driver"));
+    assert!(daemon_config.contains("max-size"));
+    assert!(daemon_config.contains("default-ulimits"));
 }
 
 #[test]
 fn test_install_kubernetes() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(containerization::install_kubernetes().is_ok());
 
-    mock.expect_run().times(5).returning(|_, _| Ok(()));
+    // Verify kubectl installation
+    let kubectl_status = std::process::Command::new("kubectl")
+        .arg("version")
+        .arg("--client")
+        .status()
+        .unwrap();
+    assert!(kubectl_status.success());
 
-    assert!(install_kubernetes().is_ok());
+    // Verify minikube installation
+    let minikube_status = std::process::Command::new("minikube")
+        .arg("version")
+        .status()
+        .unwrap();
+    assert!(minikube_status.success());
 }
 
 #[test]
 fn test_configure_kubernetes() {
-    let mut mock = common::MockCommandRunner::new();
+    assert!(containerization::configure_kubernetes().is_ok());
 
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
+    // Verify minikube is running
+    let minikube_status = std::process::Command::new("minikube")
+        .arg("status")
+        .status()
+        .unwrap();
+    assert!(minikube_status.success());
 
-    assert!(configure_kubernetes().is_ok());
-}
-
-#[test]
-fn test_deploy_container() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
-
-    assert!(deploy_container("test-app", true).is_ok());
-
-    mock.expect_run().times(4).returning(|_, _| Ok(()));
-
-    assert!(deploy_container("test-app", false).is_ok());
-}
-
-#[test]
-fn test_deploy_to_kubernetes() {
-    let mut mock = common::MockCommandRunner::new();
-
-    mock.expect_run().times(3).returning(|_, _| Ok(()));
-
-    assert!(deploy_to_kubernetes("test-app").is_ok());
+    // Verify ingress addon is enabled
+    let ingress_status = std::process::Command::new("minikube")
+        .args(&["addons", "list"])
+        .output()
+        .unwrap();
+    let ingress_output = String::from_utf8_lossy(&ingress_status.stdout);
+    assert!(ingress_output.contains("ingress: enabled"));
 }
 
 #[test]
 fn test_deploy_to_docker() {
-    let mut mock = common::MockCommandRunner::new();
+    let test_app = "nginx";
+    assert!(containerization::deploy_to_docker(test_app).is_ok());
 
-    mock.expect_run().times(4).returning(|_, _| Ok(()));
-
-    assert!(deploy_to_docker("test-app").is_ok());
+    // Verify container is running
+    let container_status = std::process::Command::new("docker")
+        .args(&["ps", "-q", "-f", &format!("name={}", test_app)])
+        .output()
+        .unwrap();
+    assert!(!container_status.stdout.is_empty());
 }
 
 #[test]
-fn test_containerization_error_handling() {
-    let mut mock = common::MockCommandRunner::new();
-    let config = MockConfig {
-        use_containers: true,
+fn test_deploy_to_kubernetes() {
+    let test_app = "nginx";
+    assert!(containerization::deploy_to_kubernetes(test_app).is_ok());
+
+    // Verify deployment is created
+    let deployment_status = std::process::Command::new("kubectl")
+        .args(&["get", "deployment", test_app])
+        .status()
+        .unwrap();
+    assert!(deployment_status.success());
+
+    // Verify service is created
+    let service_status = std::process::Command::new("kubectl")
+        .args(&["get", "service", test_app])
+        .status()
+        .unwrap();
+    assert!(service_status.success());
+}
+
+#[test]
+fn test_setup_docker() {
+    let rollback_manager = RollbackManager::new();
+    assert!(containerization::setup_docker(&rollback_manager).is_ok());
+
+    // Verify Docker is installed and configured
+    assert!(std::process::Command::new("docker")
+        .arg("info")
+        .status()
+        .unwrap()
+        .success());
+}
+
+#[test]
+fn test_setup_kubernetes() {
+    let rollback_manager = RollbackManager::new();
+    assert!(containerization::setup_kubernetes(&rollback_manager).is_ok());
+
+    // Verify Kubernetes is installed and configured
+    assert!(std::process::Command::new("kubectl")
+        .arg("cluster-info")
+        .status()
+        .unwrap()
+        .success());
+}
+
+#[test]
+fn test_deploy_containers() {
+    let config = Config {
+        deployed_apps: vec![String::from("nginx"), String::from("redis")],
         use_kubernetes: true,
-        deployed_apps: vec!["test-app".to_string()],
         ..Default::default()
     };
-    let rollback = MockRollbackManager::new();
+    let rollback_manager = RollbackManager::new();
 
-    mock.expect_run()
-        .returning(|_, _| Err("Command failed".into()));
+    assert!(containerization::deploy_containers(&config, &rollback_manager).is_ok());
 
-    assert!(setup_docker(&rollback).is_err());
-    assert!(setup_kubernetes(&rollback).is_err());
-    assert!(deploy_containers(&config, &rollback).is_err());
+    // Verify deployments are created
+    for app in &config.deployed_apps {
+        let deployment_status = std::process::Command::new("kubectl")
+            .args(&["get", "deployment", app])
+            .status()
+            .unwrap();
+        assert!(deployment_status.success());
+    }
 }
