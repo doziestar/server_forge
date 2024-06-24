@@ -164,21 +164,29 @@ jobs:
         run: tar -xzvf server_forge-x86_64-unknown-linux-gnu.tar.gz
       - name: Create DEB package
         run: |
-          mkdir -p serverforge_${{ github.ref_name }}_amd64/DEBIAN
+          # Remove 'v' prefix from version if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          
+          mkdir -p serverforge_${VERSION}_amd64/DEBIAN
           echo "Package: serverforge
-          Version: ${{ github.ref_name }}
+          Version: ${VERSION}
           Architecture: amd64
           Maintainer: Chidozie C. Okafor <chidosiky2015@gmail.com>
-          Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ github.ref_name }}_amd64/DEBIAN/control
-          mkdir -p serverforge_${{ github.ref_name }}_amd64/usr/local/bin
-          cp server_forge serverforge_${{ github.ref_name }}_amd64/usr/local/bin/
-          dpkg-deb --build serverforge_${{ github.ref_name }}_amd64
+          Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${VERSION}_amd64/DEBIAN/control
+          mkdir -p serverforge_${VERSION}_amd64/usr/local/bin
+          cp server_forge serverforge_${VERSION}_amd64/usr/local/bin/
+          dpkg-deb --build serverforge_${VERSION}_amd64
       - name: Create RPM package
         run: |
+          # Remove 'v' prefix from version if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          
           mkdir -p ~/rpmbuild/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
           cp server_forge ~/rpmbuild/SOURCES/
           echo "Name: serverforge
-          Version: ${{ github.ref_name }}
+          Version: ${VERSION}
           Release: 1
           Summary: ServerForge - A robust server setup and maintenance tool
           License: MIT
@@ -203,9 +211,9 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: |
-            ./serverforge_${{ github.ref_name }}_amd64.deb
-            ~/rpmbuild/RPMS/x86_64/serverforge-${{ github.ref_name }}-1.x86_64.rpm
+            ./serverforge_${VERSION}_amd64.deb
+            ~/rpmbuild/RPMS/x86_64/serverforge-${VERSION}-1.x86_64.rpm
           asset_name: |
-            serverforge_${{ github.ref_name }}_amd64.deb
-            serverforge-${{ github.ref_name }}-1.x86_64.rpm
+            serverforge_${VERSION}_amd64.deb
+            serverforge-${VERSION}-1.x86_64.rpm
           asset_content_type: application/octet-stream
