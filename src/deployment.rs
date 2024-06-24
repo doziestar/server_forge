@@ -283,7 +283,7 @@ fn setup_postgresql() -> Result<(), Box<dyn Error>> {
         ],
     )?;
 
-    // Save the password securely (this is a placeholder - in a real-world scenario,
+    // Save the password securely
     // you'd want to use a more secure method to store this password)
     std::fs::write("/root/.postgres_password", &password)?;
 
