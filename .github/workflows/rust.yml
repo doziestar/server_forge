@@ -162,39 +162,45 @@ jobs:
           path: ./
       - name: Extract release artifact
         run: tar -xzvf server_forge-x86_64-unknown-linux-gnu.tar.gz
-      - name: Set version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_ENV
       - name: Create DEB package
         run: |
-          mkdir -p serverforge_${{ env.VERSION }}_amd64/DEBIAN
+          # Remove 'v' prefix from version if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          mkdir -p serverforge_${VERSION}_amd64/DEBIAN
           echo "Package: serverforge
-          Version: ${{ env.VERSION }}
+          Version: ${VERSION}
           Architecture: amd64
           Maintainer: Chidozie C. Okafor <chidosiky2015@gmail.com>
-          Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${{ env.VERSION }}_amd64/DEBIAN/control
-          mkdir -p serverforge_${{ env.VERSION }}_amd64/usr/local/bin
-          cp server_forge serverforge_${{ env.VERSION }}_amd64/usr/local/bin/
-          dpkg-deb --build serverforge_${{ env.VERSION }}_amd64
+          Description: ServerForge - A robust server setup and maintenance tool" > serverforge_${VERSION}_amd64/DEBIAN/control
+          mkdir -p serverforge_${VERSION}_amd64/usr/local/bin
+          cp server_forge serverforge_${VERSION}_amd64/usr/local/bin/
+          dpkg-deb --build serverforge_${VERSION}_amd64
       - name: Create RPM package
         run: |
+          # Remove 'v' prefix from version if present
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
           mkdir -p ~/rpmbuild/{SPECS,SOURCES,BUILD,RPMS,SRPMS}
           cp server_forge ~/rpmbuild/SOURCES/
           echo "Name: serverforge
-          Version: ${{ env.VERSION }}
+          Version: ${VERSION}
           Release: 1
           Summary: ServerForge - A robust server setup and maintenance tool
           License: MIT
-          
+
           %description
           ServerForge is a robust server setup and maintenance tool.
-          
+
           %install
           mkdir -p %{buildroot}/usr/local/bin
           cp %{_sourcedir}/server_forge %{buildroot}/usr/local/bin/
-          
+
           %files
           /usr/local/bin/server_forge
-          
+
           %clean
           rm -rf %{buildroot}" > ~/rpmbuild/SPECS/serverforge.spec
           rpmbuild -ba ~/rpmbuild/SPECS/serverforge.spec
@@ -204,15 +210,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./serverforge_${{ env.VERSION }}_amd64.deb
-          asset_name: serverforge_${{ env.VERSION }}_amd64.deb
-          asset_content_type: application/vnd.debian.binary-package
+          asset_path: ./serverforge_${VERSION}_amd64.deb
+          asset_name: serverforge_${VERSION}_amd64.deb
+          asset_content_type: application/octet-stream
       - name: Upload RPM package
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ~/rpmbuild/RPMS/x86_64/serverforge-${{ env.VERSION }}-1.x86_64.rpm
-          asset_name: serverforge-${{ env.VERSION }}-1.x86_64.rpm
-          asset_content_type: application/x-rpm
+          asset_path: ~/rpmbuild/RPMS/x86_64/serverforge-${VERSION}-1.x86_64.rpm
+          asset_name: serverforge-${VERSION}-1.x86_64.rpm
+          asset_content_type: application/octet-stream
