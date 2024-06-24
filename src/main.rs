@@ -1,7 +1,6 @@
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::fs;
 
 mod backup;
 mod config;
@@ -16,7 +15,6 @@ mod utils;
 
 mod distro;
 
-use config::Config;
 use rollback::RollbackManager;
 use utils::{generate_report, get_user_input, save_config, setup_logging};
 

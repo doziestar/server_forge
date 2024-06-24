@@ -3,7 +3,6 @@ use crate::distro::{get_package_manager, PackageManager};
 use crate::rollback::RollbackManager;
 use crate::utils::run_command;
 use log::info;
-use std::cmp::PartialEq;
 use std::error::Error;
 
 pub fn deploy_applications(
@@ -62,10 +61,12 @@ fn deploy_apache() -> Result<(), Box<dyn Error>> {
         PackageManager::Dnf => run_command("dnf", &["install", "-y", "httpd"])?,
     }
 
-    run_command("systemctl", &["start", "apache2"])? // For Ubuntu
-        .or_else(|_| run_command("systemctl", &["start", "httpd"]))?; // For CentOS/Fedora
-    run_command("systemctl", &["enable", "apache2"])? // For Ubuntu
-        .or_else(|_| run_command("systemctl", &["enable", "httpd"]))?; // For CentOS/Fedora
+    if let Err(_) = run_command("systemctl", &["start", "apache2"]) {
+        run_command("systemctl", &["start", "httpd"])?;
+    }
+    if let Err(_) = run_command("systemctl", &["enable", "apache2"]) {
+        run_command("systemctl", &["enable", "httpd"])?;
+    }
 
     Ok(())
 }
@@ -228,8 +229,9 @@ fn setup_apache_config() -> Result<(), Box<dyn Error>> {
         "/etc/apache2/sites-available/000-default.conf",
         apache_config,
     )?;
-    run_command("systemctl", &["reload", "apache2"])? // For Ubuntu
-        .or_else(|_| run_command("systemctl", &["reload", "httpd"]))?; // For CentOS/Fedora
+    if let Err(_) = run_command("systemctl", &["reload", "apache2"]) {
+        run_command("systemctl", &["reload", "httpd"])?;
+    }
     Ok(())
 }
 

@@ -1,5 +1,5 @@
-use crate::distro::{get_package_manager, uninstall_package, PackageManager};
-use log::{error, info};
+use crate::distro::{get_package_manager, uninstall_package};
+use log::{info};
 use std::cell::RefCell;
 use std::error::Error;
 use std::fs;
