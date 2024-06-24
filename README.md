@@ -21,20 +21,6 @@ ServerForge is a robust, customizable server setup and maintenance tool written 
 
 ## Installation
 
-### macOS
-
-Using Homebrew:
-
-```bash
-brew install doziestar/tap/serverforge
-```
-
-To update:
-
-```bash
-brew upgrade serverforge
-```
-
 ### Linux
 
 #### Ubuntu/Debian
@@ -85,14 +71,6 @@ To update:
 sudo dnf update serverforge
 ```
 
-### Windows
-
-1. Download the latest release from our [GitHub Releases page](https://github.com/doziestar/serverforge/releases).
-2. Extract the zip file.
-3. Run the `serverforge.exe` file with administrator privileges.
-
-To update, simply download and replace the existing `serverforge.exe` with the new version.
-
 ### Manual Installation (All Platforms)
 
 You can also install ServerForge using our install script:
@@ -112,10 +90,6 @@ On Linux/macOS:
 sudo serverforge
 ```
 
-On Windows (run Command Prompt as Administrator):
-```cmd
-serverforge
-```
 
 Follow the interactive prompts to configure your server. ServerForge will ask for information such as:
 
