@@ -154,20 +154,6 @@ jobs:
         with:
           command: build
           args: --release --target ${{ matrix.target }}
-      - name: Debug - Print Cargo metadata
-        run: cargo metadata --format-version=1
-      - name: Debug - List directory contents
-        run: |
-          echo "Current directory:"
-          pwd
-          echo "Contents of current directory:"
-          ls -la
-          echo "Contents of target directory:"
-          ls -la target
-          echo "Contents of target/${{ matrix.target }} directory:"
-          ls -la target/${{ matrix.target }}
-          echo "Contents of target/${{ matrix.target }}/release directory:"
-          ls -la target/${{ matrix.target }}/release
       - name: Package
         shell: bash
         run: |
@@ -175,36 +161,34 @@ jobs:
           echo "Contents of release directory:"
           ls -la
 
-          # Try to find the binary
-          BINARY_NAME=""
-          for file in *; do
-            if [[ -x "$file" && ! -d "$file" ]]; then
-              BINARY_NAME="$file"
-              break
-            fi
-          done
-
-          if [[ -z "$BINARY_NAME" ]]; then
-            echo "Error: No executable binary found"
+          BINARY_NAME="server_forge"
+          if [[ ! -f "$BINARY_NAME" && ! -f "${BINARY_NAME}.exe" ]]; then
+            echo "Error: Expected binary $BINARY_NAME not found"
             exit 1
           fi
 
           echo "Found binary: $BINARY_NAME"
 
+          ARCHIVE_NAME="server_forge-${{ matrix.target }}"
+
           case ${{ matrix.target }} in
             x86_64-pc-windows-msvc)
-              7z a ../../../serverforge-${{ matrix.target }}.zip "$BINARY_NAME"
+              7z a "../../../${ARCHIVE_NAME}.zip" "${BINARY_NAME}.exe"
               ;;
             *)
-              tar czvf ../../../serverforge-${{ matrix.target }}.tar.gz "$BINARY_NAME"
+              tar czvf "../../../${ARCHIVE_NAME}.tar.gz" "$BINARY_NAME"
               ;;
           esac
+
+          echo "Created archive: ${ARCHIVE_NAME}"
+          cd ../../..
+          ls -la "${ARCHIVE_NAME}"*
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: serverforge-${{ matrix.target }}.*
-          asset_name: serverforge-${{ matrix.target }}
+          repo_token: ${{ secrets.TOKEN }}
+          file: server_forge-${{ matrix.target }}.*
+          asset_name: server_forge-${{ matrix.target }}
           tag: ${{ github.ref }}
           overwrite: true
 
