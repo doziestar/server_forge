@@ -109,7 +109,7 @@ fn setup_grafana() -> Result<(), Box<dyn Error>> {
     run_command("systemctl", &["start", "grafana-server"])?;
     run_command("systemctl", &["enable", "grafana-server"])?;
 
-    // Here you might want to add code to configure Grafana via its API
+    // Here we will add code to configure Grafana via its API
     // For example, adding data sources, creating dashboards, etc.
 
     Ok(())

@@ -53,7 +53,7 @@ impl RollbackManager {
     }
 
     pub fn commit_snapshot(&self, _snapshot_id: usize) -> Result<(), Box<dyn Error>> {
-        // In a real implementation, we might want to compress the snapshot or write it to disk
+        // we might want to compress the snapshot or write it to disk
         Ok(())
     }
 
