@@ -76,7 +76,7 @@ sudo dnf update serverforge
 You can also install ServerForge using our install script:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/doziestar/serverforge/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/doziestar/server_forge/main/install.sh | bash
 ```
 
 This script will detect your OS and architecture and install the appropriate version of ServerForge.
