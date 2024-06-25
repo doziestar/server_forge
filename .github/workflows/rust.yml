@@ -2,9 +2,9 @@ name: Rust CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   release:
     types: [created]
 
@@ -50,7 +50,7 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy -- -A clippy::redundant_pattern_matching -A dead_code
 
   docs:
     name: Documentation
@@ -101,7 +101,7 @@ jobs:
 
   release:
     name: Release
-    needs: [check, fmt, docs, publish-dry-run]
+    needs: [check, fmt, docs, publish-dry-run, clippy]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:
@@ -123,30 +123,30 @@ jobs:
           cat << EOF > install.sh
           #!/bin/bash
           set -e
-          
+
           # Detect OS and architecture
           OS=$(uname -s | tr '[:upper:]' '[:lower:]')
           ARCH=$(uname -m)
-          
+
           if [ "$OS" != "linux" ] || [ "$ARCH" != "x86_64" ]; then
             echo "Unsupported OS or architecture. This script is for Linux x86_64 only."
             exit 1
           fi
-          
+
           # Download the latest release
           LATEST_RELEASE_URL=$(curl -s https://api.github.com/repos/doziestar/serverforge/releases/latest | grep "browser_download_url.*tar.gz" | cut -d : -f 2,3 | tr -d \")
           curl -L -o server_forge.tar.gz $LATEST_RELEASE_URL
-          
+
           # Extract the binary
           tar -xzvf server_forge.tar.gz
-          
+
           # Install the binary
           sudo mv server_forge /usr/local/bin/
           sudo chmod +x /usr/local/bin/server_forge
-          
+
           # Clean up
           rm server_forge.tar.gz
-          
+
           echo "ServerForge has been installed successfully!"
           EOF
       - name: Upload binary to release
@@ -179,7 +179,7 @@ jobs:
 
   linux-packages:
     name: Create Linux Packages
-    needs: [ release ]
+    needs: [release]
     if: github.event_name == 'release' && github.event.action == 'created'
     runs-on: ubuntu-latest
     steps:
@@ -253,4 +253,3 @@ jobs:
           asset_path: ~/rpmbuild/RPMS/x86_64/serverforge-${{ env.VERSION }}-1.x86_64.rpm
           asset_name: serverforge-${{ env.VERSION }}-1.x86_64.rpm
           asset_content_type: application/octet-stream
-

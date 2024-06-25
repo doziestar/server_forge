@@ -110,10 +110,11 @@ pub fn deploy_apache() -> Result<(), Box<dyn Error>> {
         PackageManager::Dnf => run_command("dnf", &["install", "-y", "httpd"])?,
     }
 
-    if let Err(_) = run_command("systemctl", &["start", "apache2"]) {
+    if run_command("systemctl", &["start", "apache2"]).is_err() {
         run_command("systemctl", &["start", "httpd"])?;
     }
-    if let Err(_) = run_command("systemctl", &["enable", "apache2"]) {
+
+    if run_command("systemctl", &["enable", "apache2"]).is_err() {
         run_command("systemctl", &["enable", "httpd"])?;
     }
 
@@ -350,7 +351,8 @@ fn setup_apache_config() -> Result<(), Box<dyn Error>> {
         "/etc/apache2/sites-available/000-default.conf",
         apache_config,
     )?;
-    if let Err(_) = run_command("systemctl", &["reload", "apache2"]) {
+    
+    if run_command("systemctl", &["reload", "apache2"]).is_err() {
         run_command("systemctl", &["reload", "httpd"])?;
     }
     Ok(())
