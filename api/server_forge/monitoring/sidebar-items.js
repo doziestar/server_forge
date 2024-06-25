@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["configure_prometheus","install_monitoring_tools","install_node_exporter_from_source","install_prometheus_from_source","setup_grafana","setup_monitoring","setup_node_exporter"]};

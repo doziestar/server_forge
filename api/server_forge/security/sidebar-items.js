@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["configure_fail2ban","implement_security_measures","setup_advanced_security","setup_rootkit_detection","setup_security_scans"]};

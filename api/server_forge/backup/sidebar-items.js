@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["configure_backup_schedule","install_backup_tools","setup_backup_locations","setup_backup_system"]};

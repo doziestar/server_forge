@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["initial_setup","install_essential_packages","setup_firewall","setup_ssh","update_system"]};

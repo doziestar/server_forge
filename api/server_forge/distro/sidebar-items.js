@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["PackageManager"],"fn":["get_package_manager","install_package","uninstall_package","update_system"]};

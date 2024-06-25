@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["configure_docker","configure_kubernetes","deploy_container","deploy_containers","deploy_to_docker","deploy_to_kubernetes","install_docker","install_kubernetes","setup_docker","setup_kubernetes"]};
