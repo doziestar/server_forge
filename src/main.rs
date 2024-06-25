@@ -7,7 +7,6 @@
 //! various setup and configuration processes.
 
 use log::{error, info};
-use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 mod backup;
@@ -109,12 +108,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             rollback.rollback_all()?;
             return Err("Container deployment failed".into());
         }
-    } else {
-        if let Err(e) = deployment::deploy_applications(&config, &rollback) {
-            error!("Error deploying applications: {}", e);
-            rollback.rollback_all()?;
-            return Err("Application deployment failed".into());
-        }
+    } else if let Err(e) = deployment::deploy_applications(&config, &rollback) {
+        error!("Error deploying applications: {}", e);
+        rollback.rollback_all()?;
+        return Err("Application deployment failed".into());
     }
 
     info!("Server setup completed successfully");

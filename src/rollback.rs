@@ -20,6 +20,12 @@ struct Snapshot {
     packages_installed: Vec<String>,
 }
 
+impl Default for RollbackManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RollbackManager {
     /// Creates a new `RollbackManager` instance.
     pub fn new() -> Self {
