@@ -351,7 +351,7 @@ fn setup_apache_config() -> Result<(), Box<dyn Error>> {
         "/etc/apache2/sites-available/000-default.conf",
         apache_config,
     )?;
-    
+
     if run_command("systemctl", &["reload", "apache2"]).is_err() {
         run_command("systemctl", &["reload", "httpd"])?;
     }
