@@ -284,6 +284,17 @@ pub fn deploy_python() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up the web server configuration based on the specified application.
+/// This function configures the default web server configuration for Nginx or Apache.
+/// It creates a basic "Hello, World!" index page in the web root directory.
+///
+/// # Arguments
+///
+/// * `app` - The name of the application (e.g., "nginx" or "apache").
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the web server configuration is set up successfully, or an error if configuration fails.
 pub fn setup_web_server_config(app: &str) -> Result<(), Box<dyn Error>> {
     match app {
         "nginx" => setup_nginx_config()?,
@@ -293,6 +304,15 @@ pub fn setup_web_server_config(app: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Creates a sample web application based on the specified application type.
+/// This function creates a basic "Hello, World!" application for PHP, Node.js, or Python,
+/// demonstrating how to set up a simple web server for each technology.
+/// # Arguments
+/// 
+/// * `app_type` - A string slice representing the type of application to create ("php", "nodejs", or "python")
+/// # Returns
+/// 
+/// Returns `Ok(())` if the sample application is created successfully, or an error if creation fails.
 fn setup_nginx_config() -> Result<(), Box<dyn Error>> {
     let nginx_config = r#"
 server {
@@ -311,6 +331,13 @@ server {
     Ok(())
 }
 
+
+/// Sets up the Apache web server configuration.
+/// This function configures the default Apache virtual host configuration.
+/// 
+/// # Returns
+/// 
+/// Returns `Ok(())` if the Apache configuration is set up successfully, or an error if configuration fails.
 fn setup_apache_config() -> Result<(), Box<dyn Error>> {
     let apache_config = r#"
 <VirtualHost *:80>
@@ -330,6 +357,16 @@ fn setup_apache_config() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up the database based on the specified database type.
+/// This function sets up the MySQL or PostgreSQL database server by running the necessary
+/// 
+/// # Arguments
+/// 
+/// * `db` - A string slice representing the type of database to set up ("mysql" or "postgresql")
+/// 
+/// # Returns
+/// 
+/// Returns `Ok(())` if the database is set up successfully, or an error if setting up fails.
 pub fn setup_database(db: &str) -> Result<(), Box<dyn Error>> {
     match db {
         "mysql" => setup_mysql()?,
@@ -339,6 +376,12 @@ pub fn setup_database(db: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up the MySQL database server.
+/// This function sets the root password, removes anonymous users, and flushes privileges.
+/// 
+/// # Returns
+/// 
+/// Returns `Ok(())` if the MySQL server is set up successfully, or an error if setting up fails.
 fn setup_mysql() -> Result<(), Box<dyn Error>> {
     // Generate a secure random password
     let password = generate_secure_password();
@@ -364,6 +407,12 @@ fn setup_mysql() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Sets up the PostgreSQL database server.
+/// This function sets the password for the postgres user and saves it securely.
+/// 
+/// # Returns
+/// 
+/// Returns `Ok(())` if the PostgreSQL server is set up successfully, or an error if setting up fails.
 fn setup_postgresql() -> Result<(), Box<dyn Error>> {
     // Generate a secure random password
     let password = generate_secure_password();
@@ -425,7 +474,6 @@ fn generate_secure_password() -> String {
 /// # Returns
 ///
 /// Returns `Ok(())` if the sample application is created successfully, or an error if creation fails.
-// Helper function to create a simple web application
 fn create_sample_web_app(app_type: &str) -> Result<(), Box<dyn Error>> {
     match app_type {
         "php" => {

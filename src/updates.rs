@@ -7,7 +7,6 @@
 //! The module includes functions for configuring unattended-upgrades on Ubuntu,
 //! yum-cron on CentOS, and dnf-automatic on Fedora.
 use crate::config::Config;
-use crate::distro::get_package_manager;
 use crate::rollback::RollbackManager;
 use crate::utils::run_command;
 use log::info;
@@ -117,7 +116,7 @@ Unattended-Upgrade::Automatic-Reboot "false";
 /// # Returns
 ///
 /// Returns `Ok(())` if yum-cron is set up successfully, or an error if setup fails.
-fn setup_centos_updates(config: &Config) -> Result<(), Box<dyn Error>> {
+fn setup_centos_updates(_config: &Config) -> Result<(), Box<dyn Error>> {
     run_command("yum", &["install", "-y", "yum-cron"])?;
 
     let yum_cron_conf = "/etc/yum/yum-cron.conf";
@@ -143,7 +142,7 @@ fn setup_centos_updates(config: &Config) -> Result<(), Box<dyn Error>> {
 /// # Returns
 ///
 /// Returns `Ok(())` if dnf-automatic is set up successfully, or an error if setup fails.
-fn setup_fedora_updates(config: &Config) -> Result<(), Box<dyn Error>> {
+fn setup_fedora_updates(_config: &Config) -> Result<(), Box<dyn Error>> {
     run_command("dnf", &["install", "-y", "dnf-automatic"])?;
 
     let dnf_automatic_conf = "/etc/dnf/automatic.conf";
