@@ -127,6 +127,12 @@ ServerForge is designed to be easily customizable. To add or modify functionalit
 2. Add or modify functions as needed.
 3. Update the `main.rs` file if you've added new high-level functionality.
 
+## Documentation
+
+ServerForge is documented using Rustdoc. To generate the documentation: [Documentation](https://crates.io/crates/serverforge)
+
+
+
 ## Contributing
 
 Contributions to ServerForge are welcome! Please follow these steps:
