@@ -126,7 +126,7 @@ pub fn setup_advanced_security(config: &Config) -> Result<(), Box<dyn Error>> {
 /// # Errors
 ///
 /// Returns an error if installation or configuration of rootkit detection tools fails
-pub fn setup_rootkit_detection(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn setup_rootkit_detection(_config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
     match package_manager {
         PackageManager::Apt => run_command("apt", &["install", "-y", "rkhunter", "chkrootkit"])?,

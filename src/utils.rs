@@ -52,15 +52,24 @@ pub fn setup_logging() -> Result<(), Box<dyn Error>> {
 ///
 /// Returns a `Result` containing the `Config` struct if successful, or an error if input fails.
 pub fn get_user_input() -> Result<Config, Box<dyn Error>> {
-    let mut config = Config::default();
+    let mut config = Config {
+        linux_distro: prompt("Enter Linux distribution (ubuntu/centos/fedora): ")?,
+        server_role: prompt("Enter server role (web/database/application): ")?,
+        security_level: prompt("Enter desired security level (basic/intermediate/advanced): ")?,
+        monitoring: prompt("Enable monitoring? (y/n): ")?.to_lowercase() == "y",
+        backup_frequency: prompt("Enter backup frequency (hourly/daily/weekly): ")?,
+        update_schedule: prompt("Enter update schedule (daily/weekly/monthly): ")?,
+        use_containers: prompt("Use containerization? (y/n): ")?.to_lowercase() == "y",
+        ..Default::default()
+    };
 
-    config.linux_distro = prompt("Enter Linux distribution (ubuntu/centos/fedora): ")?;
-    config.server_role = prompt("Enter server role (web/database/application): ")?;
-    config.security_level = prompt("Enter desired security level (basic/intermediate/advanced): ")?;
-    config.monitoring = prompt("Enable monitoring? (y/n): ")?.to_lowercase() == "y";
-    config.backup_frequency = prompt("Enter backup frequency (hourly/daily/weekly): ")?;
-    config.update_schedule = prompt("Enter update schedule (daily/weekly/monthly): ")?;
-    config.use_containers = prompt("Use containerization? (y/n): ")?.to_lowercase() == "y";
+    // config.linux_distro = prompt("Enter Linux distribution (ubuntu/centos/fedora): ")?;
+    // config.server_role = prompt("Enter server role (web/database/application): ")?;
+    // config.security_level = prompt("Enter desired security level (basic/intermediate/advanced): ")?;
+    // config.monitoring = prompt("Enable monitoring? (y/n): ")?.to_lowercase() == "y";
+    // config.backup_frequency = prompt("Enter backup frequency (hourly/daily/weekly): ")?;
+    // config.update_schedule = prompt("Enter update schedule (daily/weekly/monthly): ")?;
+    // config.use_containers = prompt("Use containerization? (y/n): ")?.to_lowercase() == "y";
 
     if config.use_containers {
         config.use_kubernetes = prompt("Use Kubernetes? (y/n): ")?.to_lowercase() == "y";

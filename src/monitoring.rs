@@ -53,7 +53,7 @@ pub fn setup_monitoring(config: &Config, rollback: &RollbackManager) -> Result<(
 /// # Errors
 ///
 /// Returns an error if the installation of either Prometheus or Grafana fails.
-pub fn install_monitoring_tools(config: &Config) -> Result<(), Box<dyn Error>> {
+pub fn install_monitoring_tools(_config: &Config) -> Result<(), Box<dyn Error>> {
     let package_manager = get_package_manager()?;
 
     // Install Prometheus
