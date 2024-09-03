@@ -189,7 +189,7 @@ jobs:
       - name: Set version
         run: echo "VERSION=${GITHUB_REF_NAME#refs/tags/v}" >> $GITHUB_ENV
       - name: Download release artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.7
         with:
           name: server_forge-x86_64-unknown-linux-gnu
           path: ./
